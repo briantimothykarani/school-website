@@ -72,3 +72,4 @@ export default defineConfig([
 ])
 ```
 # school-website
+# school-website
