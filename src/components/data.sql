@@ -1,3 +1,14 @@
+---create table faqs (
+  id uuid primary key default gen_random_uuid(),
+  question text not null,
+  answer text not null,
+  category text,
+  created_at timestamp default now()
+);
+
+
+
+
 -- 1. SCHOOL SETTINGS TABLE
 -- This stores the global "brain" of your website.
 CREATE TABLE IF NOT EXISTS school_settings (
