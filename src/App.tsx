@@ -2,8 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "./lib/supabase";
 import Navbar from "./components/Navbar";
-import Hero from "./components/Hero";
-import About from "./components/About";
+import Hero from "./sections/Hero";
+import About from "./sections/About";
 import NoticeBoard from "./components/NoticeBoard";
 import Login from "./pages/Login";
 import Admin from "./pages/Admin";
@@ -58,31 +58,6 @@ export default function App() {
   );
 }
 
-// Security Gatekeeper
-function ProtectedRoute({ children }: { children: any }) {
-  const [auth, setAuth] = useState<"loading" | "ok" | "no">("loading");
-
-  useEffect(() => {
-    async function check() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) return setAuth("no");
-
-      const { data } = await supabase
-        .from("authorized_admins")
-        .select("email")
-        .eq("email", session.user.email)
-        .single();
-
-      setAuth(data ? "ok" : "no");
-    }
-    check();
-  }, []);
-
-  if (auth === "loading") return null;
-  return auth === "ok" ? children : <Navigate to="/login" />;
-}
 /*
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";

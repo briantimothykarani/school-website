@@ -1,43 +1,33 @@
-import { useState } from "react";
 import { supabase } from "../lib/supabase";
 
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
-  async function handleLogin() {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+  const signInWithGoogle = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.origin + "/admin",
+      },
     });
+
     if (error) {
-      alert("Login failed: " + error.message);
-      return;
+      alert("Google login failed: " + error.message);
     }
-    window.location.href = "/admin";
-  }
+  };
 
   return (
-    <div className="flex h-screen items-center justify-center">
-      <div className="bg-white p-6 shadow rounded space-y-2">
-        <input
-          className="border p-2 w-full"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <input
-          type="password"
-          className="border p-2 w-full"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+    <div className="flex h-screen items-center justify-center bg-gray-100">
+      <div className="bg-white p-8 rounded-xl shadow-md text-center">
+        <h1 className="text-2xl font-bold mb-6">Admin Login</h1>
+
         <button
-          onClick={handleLogin}
-          className="bg-blue-600 text-white px-4 py-2 w-full"
+          onClick={signInWithGoogle}
+          className="flex items-center gap-3 bg-white border px-6 py-3 rounded-lg shadow hover:bg-gray-50"
         >
-          Login
+          <img
+            src="https://www.svgrepo.com/show/475656/google-color.svg"
+            className="w-5"
+          />
+          Sign in with Google
         </button>
       </div>
     </div>

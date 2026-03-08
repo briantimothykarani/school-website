@@ -6,6 +6,8 @@ import About from "../sections/About";
 import Downloads from "../sections/Downloads";
 import Contact from "../sections/Contact";
 import NoticeBoard from "../components/NoticeBoard";
+import Events from "../sections/Events";
+import Testimonials from "../sections/Testimonials";
 interface SchoolSettings {
   id: string;
   school_name: string;
@@ -28,7 +30,8 @@ export default function Home() {
     const { data } = await supabase
       .from("school_settings")
       .select("*")
-      .single();
+      .limit(1)
+      .maybeSingle();
     if (data) {
       document.documentElement.style.setProperty(
         "--primary",
@@ -46,9 +49,12 @@ export default function Home() {
       <Navbar settings={settings} />
       <NoticeBoard settings={settings} />
       <Hero settings={settings} />
-      <About settings={settings} />
+      <Events /> <About settings={settings} />
+      <Testimonials />
+      // <FAQ />
       <Downloads />
       <Contact settings={settings} />
+      // <WhatsAppButton phone={settings.phone} />
     </>
   );
 }

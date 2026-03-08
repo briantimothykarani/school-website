@@ -1,8 +1,20 @@
+import { OFFLINE_MODE } from "../config";
+import { dummyDownloads } from "../dummy/downloads";
+
 export default function Navbar({ settings }: any) {
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<any>({ files: [], sections: [] });
   const [activeModal, setActiveModal] = useState<string | null>(null);
+  async function fetchFiles() {
+    if (OFFLINE_MODE) {
+      setFiles(dummyDownloads);
+      return;
+    }
 
+    const { data } = await supabase.from("downloads").select("*");
+
+    setFiles(data || []);
+  }
   const handleSearch = async (val: string) => {
     setSearch(val);
     if (val.length < 2) return setResults({ files: [], sections: [] });

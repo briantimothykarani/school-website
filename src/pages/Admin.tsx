@@ -286,6 +286,12 @@ export default function Admin() {
     fetchData();
   }, []);
 
+  const logout = async () => {
+    await supabase.auth.signOut();
+
+    window.location.href = "/";
+  };
+
   const fetchData = async () => {
     const { data: s } = await supabase
       .from("school_settings")
@@ -446,6 +452,9 @@ export default function Admin() {
           onChange={(e) => setNewDownloadFile(e.target.files?.[0] || null)}
         />
         <button onClick={uploadDownload}>Add Download</button>
+        <button onClick={logout} className="text-red-500 underline">
+          Logout
+        </button>
 
         <ul>
           {downloads.map((d) => (
