@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "./lib/supabase";
 import Navbar from "./components/Navbar";
@@ -8,103 +8,104 @@ import NoticeBoard from "./components/NoticeBoard";
 import Login from "./pages/Login";
 import Admin from "./pages/Admin";
 
+interface ProtectedRouteProps {
+  children: JSX.Element;
+}
+
+function ProtectedRoute({ children }: ProtectedRouteProps) {
+  const [status, setStatus] = useState<"loading" | "allowed" | "denied">(
+    "loading",
+  );
+
+  useEffect(() => {
+    async function checkAccess() {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData.session;
+
+      if (!session) {
+        setStatus("denied");
+        return;
+      }
+
+      const { data } = await supabase
+        .from("authorized_admins")
+        .select("email")
+        .eq("email", session.user.email)
+        .single();
+
+      setStatus(data ? "allowed" : "denied");
+    }
+    checkAccess();
+  }, []);
+
+  if (status === "loading") {
+    return (
+      <div className="h-screen flex items-center justify-center text-gray-500">
+        Checking admin access...
+      </div>
+    );
+  }
+
+  if (status === "denied") {
+    return <Navigate to="/login" />;
+  }
+
+  return children;
+}
+
 export default function App() {
   const [settings, setSettings] = useState<any>(null);
 
   useEffect(() => {
-    // Fetch Global Settings
     supabase
       .from("school_settings")
       .select("*")
-      .single()
-      .then(({ data }) => setSettings(data));
+      .order("id")
+      .limit(1)
+      .then(({ data }) => {
+        const row = data?.[0];
+        if (row) {
+          document.documentElement.style.setProperty(
+            "--primary",
+            row.primary_color || "#1e40af",
+          );
+          setSettings(row);
+        }
+      });
   }, []);
 
-  if (!settings)
+  if (!settings) {
     return (
-      <div className="h-screen flex items-center justify-center">
+      <div className="h-screen flex items-center justify-center text-gray-500">
         Loading...
       </div>
     );
+  }
 
   return (
-    <BrowserRouter>
-      <div style={{ "--primary": settings.primary_color } as any}>
-        <Navbar settings={settings} />
-        <NoticeBoard settings={settings} />
-
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <>
-                <Hero settings={settings} />
-                <About settings={settings} />
-              </>
-            }
-          />
-          <Route path="/login" element={<Login />} />
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute>
-                <Admin settings={settings} setSettings={setSettings} />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </div>
-    </BrowserRouter>
+    <div style={{ "--primary": settings.primary_color } as React.CSSProperties}>
+      <Navbar settings={settings} />
+      <NoticeBoard settings={settings} />
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <>
+              <Hero settings={settings} />
+              <About settings={settings} />
+            </>
+          }
+        />
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <Admin settings={settings} setSettings={setSettings} />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </div>
   );
 }
-
-/*
-import { Routes, Route, Navigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { supabase } from "./lib/supabase";
-import Home from "./pages/Home";
-import Admin from "./pages/Admin";
-import Login from "./pages/Login";
-
-function ProtectedRoute({ children }: { children: JSX.Element }) {
-  const [session, setSession] = useState<any>(undefined);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-    });
-
-    // Listen for auth changes
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-      },
-    );
-
-    return () => {
-      listener.subscription.unsubscribe();
-    };
-  }, []);
-
-  if (session === undefined) return <div>Loading...</div>;
-
-  return session ? children : <Navigate to="/login" />;
-}
-
-export default function App() {
-  return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/login" element={<Login />} />
-      <Route
-        path="/admin"
-        element={
-          <ProtectedRoute>
-            <Admin />
-          </ProtectedRoute>
-        }
-      />
-    </Routes>
-  );
-}
- */

@@ -1,7 +1,9 @@
-/*import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import imageCompression from "browser-image-compression";
 
-interface SchoolSettings {
+// ─── Types ───────────────────────────────────────────────
+interface Settings {
   id: string;
   school_name: string;
   motto: string;
@@ -10,463 +12,1189 @@ interface SchoolSettings {
   email: string;
   primary_color: string;
   logo_url: string;
+  hero_bg_url: string;
+  about_image_url: string;
+  map_url: string;
+  notice_text: string;
+  show_notice: boolean;
+  notice_expires_at: string;
+}
+interface Download {
+  id: string;
+  title: string;
+  file_url: string;
+  created_at: string;
+}
+interface Event {
+  id: string;
+  title: string;
+  description: string;
+  event_date: string;
+  event_time: string;
+  location: string;
+  category: string;
+  is_published: boolean;
+}
+interface Testimonial {
+  id: string;
+  name: string;
+  role: string;
+  message: string;
+  rating: number;
+  is_published: boolean;
+}
+interface FAQ {
+  id: string;
+  question: string;
+  answer: string;
+  category: string;
+  sort_order: number;
+}
+interface GalleryItem {
+  id: string;
+  title: string;
+  image_url: string;
+  category: string;
+  sort_order: number;
+  is_published: boolean;
 }
 
+type Tab =
+  | "general"
+  | "notice"
+  | "images"
+  | "downloads"
+  | "events"
+  | "testimonials"
+  | "faqs"
+  | "gallery";
+
 export default function Admin() {
-  const [settings, setSettings] = useState<SchoolSettings | null>(null);
-  const [pdfTitle, setPdfTitle] = useState("");
+  const [settings, setSettings] = useState<Settings | null>(null);
+  const [downloads, setDownloads] = useState<Download[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [faqs, setFaqs] = useState<FAQ[]>([]);
+  const [gallery, setGallery] = useState<GalleryItem[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState<{
+    msg: string;
+    type: "success" | "error";
+  } | null>(null);
+  const [activeTab, setActiveTab] = useState<Tab>("general");
+
+  // New item states
+  const [newDownloadTitle, setNewDownloadTitle] = useState("");
+  const [newDownloadFile, setNewDownloadFile] = useState<File | null>(null);
+  const [newEvent, setNewEvent] = useState({
+    title: "",
+    description: "",
+    event_date: "",
+    event_time: "",
+    location: "",
+    category: "General",
+  });
+  const [newTestimonial, setNewTestimonial] = useState({
+    name: "",
+    role: "Parent",
+    message: "",
+    rating: 5,
+  });
+  const [newFaq, setNewFaq] = useState({
+    question: "",
+    answer: "",
+    category: "General",
+  });
+  const [newGalleryTitle, setNewGalleryTitle] = useState("");
+  const [newGalleryCategory, setNewGalleryCategory] = useState("General");
+  const [newGalleryFile, setNewGalleryFile] = useState<File | null>(null);
 
   useEffect(() => {
-    fetchSettings();
+    fetchAll();
   }, []);
 
-  async function fetchSettings() {
-    const { data, error } = await supabase
-      .from<SchoolSettings>("school_settings")
-      .select("*")
-      .limit(1);
+  const showToast = (msg: string, type: "success" | "error" = "success") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
-    if (error) {
-      console.error("Error fetching settings:", error);
-      return;
-    }
+  const fetchAll = async () => {
+    const [s, d, e, t, f, g] = await Promise.all([
+      supabase.from("school_settings").select("*").order("id").limit(1),
+      supabase
+        .from("downloads")
+        .select("*")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("events")
+        .select("*")
+        .order("event_date", { ascending: true }),
+      supabase
+        .from("testimonials")
+        .select("*")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("faqs")
+        .select("*")
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("gallery")
+        .select("*")
+        .order("sort_order", { ascending: true }),
+    ]);
+    setSettings(s.data?.[0] || null);
+    setDownloads(d.data || []);
+    setEvents(e.data || []);
+    setTestimonials(t.data || []);
+    setFaqs(f.data || []);
+    setGallery(g.data || []);
+  };
 
-    setSettings(data?.[0] || null);
-  }
+  const logout = async () => {
+    await supabase.auth.signOut();
+    window.location.href = "/";
+  };
 
-  async function saveSettings() {
+  const updateSettings = async () => {
     if (!settings) return;
+    setSaving(true);
     const { error } = await supabase
       .from("school_settings")
       .update(settings)
       .eq("id", settings.id);
-
-    if (error) {
-      console.error("Error updating settings:", error);
-      alert("Failed to update settings");
-      return;
-    }
-
-    alert("Settings updated!");
-  }
-
-  async function uploadLogo(file: File) {
-    if (!file || !settings) return;
-
-    const { data, error } = await supabase.storage
-      .from("logos")
-      .upload(`logo-${Date.now()}`, file, {
-        cacheControl: "3600",
-        upsert: true,
-      });
-
-    if (error) {
-      console.error("Error uploading logo:", error);
-      return;
-    }
-
-    const { publicUrl } = supabase.storage
-      .from("logos")
-      .getPublicUrl(data.path);
-    setSettings({ ...settings, logo_url: publicUrl });
-  }
-
-  async function uploadPDF(file: File) {
-    if (!file || !pdfTitle) return;
-
-    const { data, error } = await supabase.storage
-      .from("downloads")
-      .upload(`pdf-${Date.now()}`, file, {
-        cacheControl: "3600",
-        upsert: true,
-      });
-
-    if (error) {
-      console.error("Error uploading PDF:", error);
-      return;
-    }
-
-    const { publicUrl } = supabase.storage
-      .from("downloads")
-      .getPublicUrl(data.path);
-
-    const { error: insertError } = await supabase.from("downloads").insert({
-      title: pdfTitle,
-      file_url: publicUrl,
-    });
-
-    if (insertError) {
-      console.error("Error inserting PDF record:", insertError);
-      return;
-    }
-
-    alert("PDF uploaded!");
-  }
-
-  //  if (!settings) return <div>Loading...</div>;
-
-  return (
-    <div className="p-8 max-w-xl mx-auto space-y-4">
-      <h2 className="text-2xl font-bold">Admin Panel</h2>
-
-      <input
-        className="border p-2 w-full"
-        value={settings.school_name}
-        onChange={(e) =>
-          setSettings({ ...settings, school_name: e.target.value })
-        }
-      />
-
-      <input
-        type="color"
-        value={settings.primary_color}
-        onChange={(e) =>
-          setSettings({ ...settings, primary_color: e.target.value })
-        }
-      />
-
-      <input
-        type="file"
-        accept="image/*"
-        onChange={(e) => uploadLogo(e.target.files![0])}
-      />
-
-      <button
-        onClick={saveSettings}
-        className="bg-[var(--primary)] text-white px-4 py-2"
-      >
-        Save Settings
-      </button>
-
-      <hr />
-
-      <h3 className="font-bold">Upload PDF</h3>
-
-      <input
-        className="border p-2 w-full"
-        placeholder="PDF Title"
-        value={pdfTitle}
-        onChange={(e) => setPdfTitle(e.target.value)}
-      />
-
-      <input
-        type="file"
-        accept="application/pdf"
-        onChange={(e) => uploadPDF(e.target.files![0])}
-      />
-    </div>
-  );
-}
-import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
-
-export default function Admin() {
-  const [settings, setSettings] = useState<any>(null);
-  const [downloads, setDownloads] = useState<any[]>([]);
-  const [newDownloadTitle, setNewDownloadTitle] = useState("");
-  const [newDownloadFile, setNewDownloadFile] = useState<File | null>(null);
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    const { data: s } = await supabase
-      .from("school_settings")
-      .select("*")
-      .limit(1)
-      .single();
-    setSettings(s);
-
-    const { data: d } = await supabase
-      .from("downloads")
-      .select("*")
-      .order("created_at", { ascending: false });
-    setDownloads(d || []);
+    setSaving(false);
+    error
+      ? showToast("Save failed: " + error.message, "error")
+      : showToast("Settings saved!");
   };
 
-  const updateSettings = async () => {
-    await supabase
-      .from("school_settings")
-      .update(settings)
-      .eq("id", settings.id);
-    alert("Settings updated!");
-  };
-
-  const uploadDownload = async () => {
-    if (!newDownloadFile) return;
-
-    // Upload file to Supabase Storage
-    const { data: uploadData, error } = await supabase.storage
-      .from("downloads")
-      .upload(`downloads/${newDownloadFile.name}`, newDownloadFile, {
-        upsert: true,
-      });
-
-    if (error) return alert(error.message);
-
-    // Get public URL
-    const { publicUrl } = supabase.storage
-      .from("downloads")
-      .getPublicUrl(uploadData.path);
-
-    await supabase
-      .from("downloads")
-      .insert([{ title: newDownloadTitle, file_url: publicUrl }]);
-    alert("Download added!");
-    setNewDownloadTitle("");
-    setNewDownloadFile(null);
-    fetchData();
-  };
-
-  return (
-    <div style={{ padding: "2rem" }}>
-      <h1>Admin Panel</h1>
-
-      <section>
-        <h2>School Info</h2>
-        <input
-          placeholder="School Name"
-          value={settings?.school_name || ""}
-          onChange={(e) =>
-            setSettings({ ...settings, school_name: e.target.value })
-          }
-        />
-        <input
-          placeholder="Motto"
-          value={settings?.motto || ""}
-          onChange={(e) => setSettings({ ...settings, motto: e.target.value })}
-        />
-        <textarea
-          placeholder="About"
-          value={settings?.about || ""}
-          onChange={(e) => setSettings({ ...settings, about: e.target.value })}
-        />
-        <button onClick={updateSettings}>Save Settings</button>
-      </section>
-
-      <section style={{ marginTop: "2rem" }}>
-        <h2>Downloads</h2>
-        <input
-          placeholder="Title"
-          value={newDownloadTitle}
-          onChange={(e) => setNewDownloadTitle(e.target.value)}
-        />
-        <input
-          type="file"
-          onChange={(e) => setNewDownloadFile(e.target.files?.[0] || null)}
-        />
-        <button onClick={uploadDownload}>Add Download</button>
-
-        <ul>
-          {downloads.map((d) => (
-            <li key={d.id}>
-              {d.title} - <a href={d.file_url}>View</a>
-            </li>
-          ))}
-        </ul>
-      </section>
-    </div>
-  );
-}
-*/
-
-import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
-import imageCompression from "browser-image-compression";
-
-export default function Admin() {
-  const [settings, setSettings] = useState<any>(null);
-  const [downloads, setDownloads] = useState<any[]>([]);
-  const [newDownloadTitle, setNewDownloadTitle] = useState("");
-  const [newDownloadFile, setNewDownloadFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const logout = async () => {
-    await supabase.auth.signOut();
-
-    window.location.href = "/";
-  };
-
-  const fetchData = async () => {
-    const { data: s } = await supabase
-      .from("school_settings")
-      .select("*")
-      .single();
-    setSettings(s);
-    const { data: d } = await supabase
-      .from("downloads")
-      .select("*")
-      .order("created_at", { ascending: false });
-    setDownloads(d || []);
-  };
-
-  // NEW: Image Compression & Upload Logic
   const handleImageUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
     field: string,
   ) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !settings) return;
+    setUploading(true);
     try {
-      setUploading(true);
-      const options = {
+      const compressed = await imageCompression(file, {
         maxSizeMB: 0.8,
         maxWidthOrHeight: 1920,
         useWebWorker: true,
-      };
-      const compressedFile = await imageCompression(file, options);
-
+      });
       const path = `public/${Date.now()}_${file.name}`;
-      await supabase.storage.from("school-images").upload(path, compressedFile);
+      await supabase.storage.from("school-images").upload(path, compressed);
       const {
         data: { publicUrl },
       } = supabase.storage.from("school-images").getPublicUrl(path);
-
       await supabase
         .from("school_settings")
         .update({ [field]: publicUrl })
         .eq("id", settings.id);
       setSettings({ ...settings, [field]: publicUrl });
-      alert("Image optimized and saved!");
-    } catch (err) {
-      alert("Error processing image");
-    } finally {
-      setUploading(false);
+      showToast("Image uploaded!");
+    } catch (err: any) {
+      showToast("Upload failed: " + err.message, "error");
     }
+    setUploading(false);
   };
 
-  const updateSettings = async () => {
+  // ─── Downloads ───────────────────────────────────────────
+  const uploadDownload = async () => {
+    if (!newDownloadFile || !newDownloadTitle.trim()) {
+      showToast("Fill in title and file", "error");
+      return;
+    }
+    setUploading(true);
+    const path = `public/${Date.now()}_${newDownloadFile.name}`;
+    const { error } = await supabase.storage
+      .from("school-files")
+      .upload(path, newDownloadFile);
+    if (error) {
+      showToast("Upload failed: " + error.message, "error");
+      setUploading(false);
+      return;
+    }
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("school-files").getPublicUrl(path);
     await supabase
-      .from("school_settings")
-      .update(settings)
-      .eq("id", settings.id);
-    alert("Settings updated!");
+      .from("downloads")
+      .insert({ title: newDownloadTitle, file_url: publicUrl });
+    setNewDownloadTitle("");
+    setNewDownloadFile(null);
+    showToast("Download added!");
+    fetchAll();
+    setUploading(false);
+  };
+  const deleteDownload = async (id: string) => {
+    if (!confirm("Delete this download?")) return;
+    await supabase.from("downloads").delete().eq("id", id);
+    showToast("Deleted");
+    fetchAll();
   };
 
-  // ... (keep your existing uploadDownload function) ...
+  // ─── Events ──────────────────────────────────────────────
+  const addEvent = async () => {
+    if (!newEvent.title || !newEvent.event_date) {
+      showToast("Title and date are required", "error");
+      return;
+    }
+    const { error } = await supabase
+      .from("events")
+      .insert({ ...newEvent, is_published: true });
+    if (error) {
+      showToast("Failed: " + error.message, "error");
+      return;
+    }
+    setNewEvent({
+      title: "",
+      description: "",
+      event_date: "",
+      event_time: "",
+      location: "",
+      category: "General",
+    });
+    showToast("Event added!");
+    fetchAll();
+  };
+  const deleteEvent = async (id: string) => {
+    if (!confirm("Delete this event?")) return;
+    await supabase.from("events").delete().eq("id", id);
+    showToast("Event deleted");
+    fetchAll();
+  };
+  const toggleEvent = async (id: string, current: boolean) => {
+    await supabase
+      .from("events")
+      .update({ is_published: !current })
+      .eq("id", id);
+    fetchAll();
+  };
+
+  // ─── Testimonials ────────────────────────────────────────
+  const addTestimonial = async () => {
+    if (!newTestimonial.name || !newTestimonial.message) {
+      showToast("Name and message required", "error");
+      return;
+    }
+    await supabase
+      .from("testimonials")
+      .insert({ ...newTestimonial, is_published: true });
+    setNewTestimonial({ name: "", role: "Parent", message: "", rating: 5 });
+    showToast("Testimonial added!");
+    fetchAll();
+  };
+  const deleteTestimonial = async (id: string) => {
+    if (!confirm("Delete?")) return;
+    await supabase.from("testimonials").delete().eq("id", id);
+    showToast("Deleted");
+    fetchAll();
+  };
+  const toggleTestimonial = async (id: string, current: boolean) => {
+    await supabase
+      .from("testimonials")
+      .update({ is_published: !current })
+      .eq("id", id);
+    fetchAll();
+  };
+
+  // ─── FAQs ────────────────────────────────────────────────
+  const addFaq = async () => {
+    if (!newFaq.question || !newFaq.answer) {
+      showToast("Question and answer required", "error");
+      return;
+    }
+    const maxOrder = Math.max(0, ...faqs.map((f) => f.sort_order));
+    await supabase.from("faqs").insert({ ...newFaq, sort_order: maxOrder + 1 });
+    setNewFaq({ question: "", answer: "", category: "General" });
+    showToast("FAQ added!");
+    fetchAll();
+  };
+  const deleteFaq = async (id: string) => {
+    if (!confirm("Delete?")) return;
+    await supabase.from("faqs").delete().eq("id", id);
+    showToast("Deleted");
+    fetchAll();
+  };
+
+  // ─── Gallery ─────────────────────────────────────────────
+  const uploadGalleryImage = async () => {
+    if (!newGalleryFile) {
+      showToast("Select an image", "error");
+      return;
+    }
+    setUploading(true);
+    try {
+      const compressed = await imageCompression(newGalleryFile, {
+        maxSizeMB: 0.8,
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+      });
+      const path = `public/${Date.now()}_${newGalleryFile.name}`;
+      await supabase.storage.from("school-images").upload(path, compressed);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("school-images").getPublicUrl(path);
+      const maxOrder = Math.max(0, ...gallery.map((g) => g.sort_order));
+      await supabase
+        .from("gallery")
+        .insert({
+          title: newGalleryTitle,
+          category: newGalleryCategory,
+          image_url: publicUrl,
+          sort_order: maxOrder + 1,
+          is_published: true,
+        });
+      setNewGalleryTitle("");
+      setNewGalleryFile(null);
+      showToast("Image added to gallery!");
+      fetchAll();
+    } catch (err: any) {
+      showToast("Upload failed: " + err.message, "error");
+    }
+    setUploading(false);
+  };
+  const deleteGalleryItem = async (id: string) => {
+    if (!confirm("Delete?")) return;
+    await supabase.from("gallery").delete().eq("id", id);
+    showToast("Deleted");
+    fetchAll();
+  };
+  const toggleGallery = async (id: string, current: boolean) => {
+    await supabase
+      .from("gallery")
+      .update({ is_published: !current })
+      .eq("id", id);
+    fetchAll();
+  };
+
+  // ─── UI Helpers ──────────────────────────────────────────
+  const inputCls =
+    "w-full border border-[#0a1628]/20 p-3 focus:outline-none focus:border-[#c9a84c] transition-colors text-[#0a1628] bg-white";
+  const labelCls =
+    "block text-xs font-bold uppercase tracking-widest text-[#0a1628]/50 mb-2";
+  const btnPrimary =
+    "px-6 py-3 bg-[#0a1628] text-[#c9a84c] text-xs font-bold tracking-widest uppercase hover:bg-[#c9a84c] hover:text-[#0a1628] transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed";
+  const btnDanger =
+    "text-xs text-red-400 hover:text-red-600 uppercase tracking-widest transition-colors font-bold";
+  const sectionHead = (label: string) => (
+    <div className="flex items-center gap-3 mb-6">
+      <div className="h-px w-8 bg-[#c9a84c]" />
+      <h2 className="text-xs text-[#c9a84c] tracking-[0.3em] uppercase font-bold">
+        {label}
+      </h2>
+    </div>
+  );
+
+  if (!settings)
+    return (
+      <div className="h-screen flex items-center justify-center bg-[#f8f5ef]">
+        <div className="w-10 h-10 border-4 border-[#c9a84c] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+
+  const tabs: { id: Tab; label: string; icon: string; count?: number }[] = [
+    { id: "general", label: "School Info", icon: "🏫" },
+    { id: "notice", label: "Notice", icon: "📢" },
+    { id: "images", label: "Images", icon: "🖼️" },
+    {
+      id: "downloads",
+      label: "Downloads",
+      icon: "📁",
+      count: downloads.length,
+    },
+    { id: "events", label: "Events", icon: "📅", count: events.length },
+    {
+      id: "testimonials",
+      label: "Testimonials",
+      icon: "💬",
+      count: testimonials.length,
+    },
+    { id: "faqs", label: "FAQs", icon: "❓", count: faqs.length },
+    { id: "gallery", label: "Gallery", icon: "🖼️", count: gallery.length },
+  ];
 
   return (
-    <div className="p-10 max-w-5xl mx-auto space-y-10">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">School Admin Panel</h1>
-        <button
-          onClick={() => supabase.auth.signOut()}
-          className="text-red-500 underline text-sm"
+    <div className="min-h-screen bg-[#f8f5ef]">
+      {/* Toast */}
+      {toast && (
+        <div
+          className={`fixed top-4 right-4 z-50 px-6 py-3 text-sm font-bold shadow-xl transition-all ${toast.type === "success" ? "bg-[#0a1628] text-[#c9a84c]" : "bg-red-600 text-white"}`}
         >
-          Logout
-        </button>
+          {toast.msg}
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="bg-[#0a1628] px-8 py-5 flex items-center justify-between shadow-xl">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-[#c9a84c] flex items-center justify-center font-black text-[#0a1628] text-lg">
+            {settings.school_name?.[0] || "A"}
+          </div>
+          <div>
+            <div
+              className="text-white font-black text-lg leading-none"
+              style={{ fontFamily: "'Georgia', serif" }}
+            >
+              Admin Panel
+            </div>
+            <div className="text-[#c9a84c] text-xs tracking-widest uppercase">
+              {settings.school_name}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <a
+            href="/"
+            target="_blank"
+            className="text-white/60 hover:text-[#c9a84c] text-xs tracking-widest uppercase transition-colors"
+          >
+            View Site →
+          </a>
+          <button
+            onClick={logout}
+            className="px-4 py-2 border border-red-400/40 text-red-400 hover:bg-red-400 hover:text-white text-xs font-bold tracking-widest uppercase transition-all"
+          >
+            Logout
+          </button>
+        </div>
       </div>
 
-      {/* Notice Board Section */}
-      <section className="bg-yellow-50 p-6 rounded-xl border border-yellow-200">
-        <h2 className="font-bold text-yellow-800 mb-2">
-          Notice Board (Yellow Bar)
-        </h2>
-        <div className="flex gap-4 mb-4">
-          <input
-            type="checkbox"
-            checked={settings?.show_notice}
-            onChange={(e) =>
-              setSettings({ ...settings, show_notice: e.target.checked })
-            }
-          />
-          <label>Enable Notice</label>
-        </div>
-        <textarea
-          className="w-full p-3 border rounded mb-2"
-          value={settings?.notice_text || ""}
-          onChange={(e) =>
-            setSettings({ ...settings, notice_text: e.target.value })
-          }
-        />
-        <input
-          type="datetime-local"
-          className="border p-2 rounded"
-          value={settings.notice_expires_at || ""}
-          onChange={(e) =>
-            setSettings({ ...settings, notice_expires_at: e.target.value })
-          }
-        />
-      </section>
-
-      {/* Visual Settings Section */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="border p-4 rounded-lg bg-white shadow-sm">
-          <h2 className="font-bold mb-2">Hero Background Image</h2>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => handleImageUpload(e, "hero_bg_url")}
-            disabled={uploading}
-          />
-        </div>
-        <div className="border p-4 rounded-lg bg-white shadow-sm">
-          <h2 className="font-bold mb-2">About Section Image</h2>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => handleImageUpload(e, "about_image_url")}
-            disabled={uploading}
-          />
-        </div>
-      </section>
-
-      {/* Original Settings Fields */}
-      <section className="space-y-4">
-        <h2>School Info</h2>
-        <input
-          className="w-full border p-2"
-          placeholder="School Name"
-          value={settings?.school_name || ""}
-          onChange={(e) =>
-            setSettings({ ...settings, school_name: e.target.value })
-          }
-        />
-        <textarea
-          className="w-full border p-2"
-          placeholder="About"
-          value={settings?.about || ""}
-          onChange={(e) => setSettings({ ...settings, about: e.target.value })}
-        />
-        <button
-          className="bg-blue-600 text-white px-6 py-2 rounded"
-          onClick={updateSettings}
-        >
-          Save All Changes
-        </button>
-      </section>
-      <section style={{ marginTop: "2rem" }}>
-        <h2>Downloads</h2>
-        <input
-          placeholder="Title"
-          value={newDownloadTitle}
-          onChange={(e) => setNewDownloadTitle(e.target.value)}
-        />
-        <input
-          type="file"
-          onChange={(e) => setNewDownloadFile(e.target.files?.[0] || null)}
-        />
-        <button onClick={uploadDownload}>Add Download</button>
-        <button onClick={logout} className="text-red-500 underline">
-          Logout
-        </button>
-
-        <ul>
-          {downloads.map((d) => (
-            <li key={d.id}>
-              {d.title} - <a href={d.file_url}>View</a>
-            </li>
+      <div className="max-w-5xl mx-auto px-6 py-10">
+        {/* Tabs */}
+        <div className="flex flex-wrap gap-1 mb-8 bg-white border border-[#0a1628]/10 p-1">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2.5 text-xs font-bold tracking-wider uppercase transition-all duration-200 flex items-center gap-1.5 ${activeTab === tab.id ? "bg-[#0a1628] text-[#c9a84c]" : "text-[#0a1628]/50 hover:text-[#0a1628]"}`}
+            >
+              <span>{tab.icon}</span>
+              <span className="hidden md:inline">{tab.label}</span>
+              {tab.count !== undefined && (
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded-full ${activeTab === tab.id ? "bg-[#c9a84c]/20 text-[#c9a84c]" : "bg-[#0a1628]/10 text-[#0a1628]/40"}`}
+                >
+                  {tab.count}
+                </span>
+              )}
+            </button>
           ))}
-        </ul>
-      </section>
+        </div>
 
-      {/* Downloads Section (Same as your original) */}
-      {/* ... */}
+        {/* ── GENERAL ── */}
+        {activeTab === "general" && (
+          <div className="bg-white border border-[#0a1628]/10 p-8 space-y-6">
+            {sectionHead("School Information")}
+            <div className="grid md:grid-cols-2 gap-4">
+              {[
+                ["School Name", "school_name"],
+                ["Motto", "motto"],
+                ["Phone", "phone"],
+                ["Email", "email"],
+              ].map(([label, key]) => (
+                <div key={key}>
+                  <label className={labelCls}>{label}</label>
+                  <input
+                    className={inputCls}
+                    value={(settings as any)[key] || ""}
+                    onChange={(e) =>
+                      setSettings({ ...settings, [key]: e.target.value })
+                    }
+                  />
+                </div>
+              ))}
+            </div>
+            <div>
+              <label className={labelCls}>About the School</label>
+              <textarea
+                rows={5}
+                className={inputCls + " resize-none"}
+                value={settings.about || ""}
+                onChange={(e) =>
+                  setSettings({ ...settings, about: e.target.value })
+                }
+              />
+            </div>
+            <div>
+              <label className={labelCls}>Google Maps Embed URL</label>
+              <input
+                className={inputCls}
+                placeholder="https://maps.google.com/..."
+                value={settings.map_url || ""}
+                onChange={(e) =>
+                  setSettings({ ...settings, map_url: e.target.value })
+                }
+              />
+            </div>
+            <div>
+              <label className={labelCls}>Primary Brand Color</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  className="w-12 h-10 border border-[#0a1628]/20 cursor-pointer"
+                  value={settings.primary_color || "#0a1628"}
+                  onChange={(e) =>
+                    setSettings({ ...settings, primary_color: e.target.value })
+                  }
+                />
+                <span className="text-[#0a1628]/50 text-sm">
+                  {settings.primary_color}
+                </span>
+              </div>
+            </div>
+            <div className="pt-4 border-t border-[#0a1628]/10">
+              <button
+                onClick={updateSettings}
+                disabled={saving}
+                className={btnPrimary}
+              >
+                {saving ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── NOTICE ── */}
+        {activeTab === "notice" && (
+          <div className="bg-white border border-[#0a1628]/10 p-8 space-y-6">
+            {sectionHead("Notice Board")}
+            <div className="flex items-center gap-3 p-4 bg-[#f8f5ef] border border-[#0a1628]/10">
+              <input
+                type="checkbox"
+                id="show_notice"
+                className="w-4 h-4 accent-[#c9a84c]"
+                checked={settings.show_notice || false}
+                onChange={(e) =>
+                  setSettings({ ...settings, show_notice: e.target.checked })
+                }
+              />
+              <label
+                htmlFor="show_notice"
+                className="text-sm font-bold text-[#0a1628] tracking-wide uppercase"
+              >
+                Enable Notice Bar
+              </label>
+            </div>
+            <div>
+              <label className={labelCls}>Notice Text</label>
+              <textarea
+                rows={3}
+                className={inputCls + " resize-none"}
+                value={settings.notice_text || ""}
+                onChange={(e) =>
+                  setSettings({ ...settings, notice_text: e.target.value })
+                }
+              />
+            </div>
+            <div>
+              <label className={labelCls}>Auto-hide After (optional)</label>
+              <input
+                type="datetime-local"
+                className="border border-[#0a1628]/20 p-3 focus:outline-none focus:border-[#c9a84c] text-[#0a1628]"
+                value={settings.notice_expires_at || ""}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    notice_expires_at: e.target.value,
+                  })
+                }
+              />
+            </div>
+            {settings.show_notice && settings.notice_text && (
+              <div className="bg-[#0a1628] flex items-center gap-3 px-4 py-2.5">
+                <span className="w-2 h-2 rounded-full bg-[#c9a84c] animate-pulse" />
+                <span className="text-[#c9a84c] text-xs font-bold tracking-widest uppercase">
+                  Notice
+                </span>
+                <span className="text-white/80 text-sm">
+                  {settings.notice_text}
+                </span>
+              </div>
+            )}
+            <div className="pt-4 border-t border-[#0a1628]/10">
+              <button
+                onClick={updateSettings}
+                disabled={saving}
+                className={btnPrimary}
+              >
+                {saving ? "Saving..." : "Save Notice"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── IMAGES ── */}
+        {activeTab === "images" && (
+          <div className="bg-white border border-[#0a1628]/10 p-8 space-y-8">
+            {sectionHead("Site Images")}
+            {uploading && (
+              <div className="flex items-center gap-3 p-4 bg-[#f8f5ef] border border-[#c9a84c]/30">
+                <div className="w-5 h-5 border-2 border-[#c9a84c] border-t-transparent rounded-full animate-spin" />
+                <span className="text-sm text-[#0a1628]/70">Uploading...</span>
+              </div>
+            )}
+            {[
+              {
+                field: "hero_bg_url",
+                label: "Hero Background Image",
+                hint: "Full-width banner. Recommended: 1920×1080px",
+              },
+              {
+                field: "about_image_url",
+                label: "About Section Image",
+                hint: "Next to About Us text. Recommended: 800×600px",
+              },
+              {
+                field: "logo_url",
+                label: "School Logo",
+                hint: "Shown in navbar. Use PNG with transparent background.",
+              },
+            ].map(({ field, label, hint }) => (
+              <div key={field} className="border border-[#0a1628]/10 p-6">
+                <label className={labelCls}>{label}</label>
+                <p className="text-xs text-[#0a1628]/40 mb-4">{hint}</p>
+                {(settings as any)[field] && (
+                  <img
+                    src={(settings as any)[field]}
+                    alt={label}
+                    className="w-full max-h-48 object-cover mb-4 border border-[#0a1628]/10"
+                  />
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  disabled={uploading}
+                  onChange={(e) => handleImageUpload(e, field)}
+                  className="text-sm text-[#0a1628]/60 file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-[#0a1628] file:text-[#c9a84c] file:text-xs file:font-bold file:uppercase file:tracking-widest file:cursor-pointer hover:file:bg-[#c9a84c] hover:file:text-[#0a1628] file:transition-all"
+                />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── DOWNLOADS ── */}
+        {activeTab === "downloads" && (
+          <div className="bg-white border border-[#0a1628]/10 p-8 space-y-8">
+            {sectionHead("Downloads & Documents")}
+            <div className="border border-dashed border-[#0a1628]/20 p-6 space-y-4">
+              <p className={labelCls}>Add New Document</p>
+              <input
+                className={inputCls}
+                placeholder="Document title e.g. 'Term 2 Newsletter'"
+                value={newDownloadTitle}
+                onChange={(e) => setNewDownloadTitle(e.target.value)}
+              />
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx,.xls,.xlsx"
+                onChange={(e) =>
+                  setNewDownloadFile(e.target.files?.[0] || null)
+                }
+                className="text-sm text-[#0a1628]/60 file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-[#0a1628] file:text-[#c9a84c] file:text-xs file:font-bold file:uppercase file:tracking-widest file:cursor-pointer hover:file:bg-[#c9a84c] hover:file:text-[#0a1628] file:transition-all"
+              />
+              <button
+                onClick={uploadDownload}
+                disabled={uploading || !newDownloadTitle || !newDownloadFile}
+                className={btnPrimary}
+              >
+                {uploading ? "Uploading..." : "Upload Document"}
+              </button>
+            </div>
+            <div className="space-y-2">
+              {downloads.length === 0 ? (
+                <p className="text-[#0a1628]/30 text-sm text-center py-8">
+                  No documents yet
+                </p>
+              ) : (
+                downloads.map((d) => (
+                  <div
+                    key={d.id}
+                    className="flex items-center justify-between p-4 border border-[#0a1628]/10 hover:border-[#c9a84c]/40 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-[#0a1628] flex items-center justify-center">
+                        <span className="text-[#c9a84c] text-[10px] font-bold">
+                          PDF
+                        </span>
+                      </div>
+                      <span className="text-[#0a1628] font-semibold text-sm">
+                        {d.title}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <a
+                        href={d.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-[#0a1628]/40 hover:text-[#c9a84c] uppercase tracking-widest"
+                      >
+                        View
+                      </a>
+                      <button
+                        onClick={() => deleteDownload(d.id)}
+                        className={btnDanger}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── EVENTS ── */}
+        {activeTab === "events" && (
+          <div className="bg-white border border-[#0a1628]/10 p-8 space-y-8">
+            {sectionHead("Events")}
+            <div className="border border-dashed border-[#0a1628]/20 p-6 space-y-4">
+              <p className={labelCls}>Add New Event</p>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>Title *</label>
+                  <input
+                    className={inputCls}
+                    placeholder="e.g. Sports Day"
+                    value={newEvent.title}
+                    onChange={(e) =>
+                      setNewEvent({ ...newEvent, title: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>Date *</label>
+                  <input
+                    type="date"
+                    className={inputCls}
+                    value={newEvent.event_date}
+                    onChange={(e) =>
+                      setNewEvent({ ...newEvent, event_date: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>Time</label>
+                  <input
+                    className={inputCls}
+                    placeholder="e.g. 9:00 AM"
+                    value={newEvent.event_time}
+                    onChange={(e) =>
+                      setNewEvent({ ...newEvent, event_time: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>Location</label>
+                  <input
+                    className={inputCls}
+                    placeholder="e.g. School Hall"
+                    value={newEvent.location}
+                    onChange={(e) =>
+                      setNewEvent({ ...newEvent, location: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>Category</label>
+                  <select
+                    className={inputCls}
+                    value={newEvent.category}
+                    onChange={(e) =>
+                      setNewEvent({ ...newEvent, category: e.target.value })
+                    }
+                  >
+                    {[
+                      "General",
+                      "Sports",
+                      "Academic",
+                      "Cultural",
+                      "Meeting",
+                    ].map((c) => (
+                      <option key={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className={labelCls}>Description</label>
+                <textarea
+                  rows={2}
+                  className={inputCls + " resize-none"}
+                  value={newEvent.description}
+                  onChange={(e) =>
+                    setNewEvent({ ...newEvent, description: e.target.value })
+                  }
+                />
+              </div>
+              <button onClick={addEvent} className={btnPrimary}>
+                Add Event
+              </button>
+            </div>
+            <div className="space-y-2">
+              {events.length === 0 ? (
+                <p className="text-[#0a1628]/30 text-sm text-center py-8">
+                  No events yet
+                </p>
+              ) : (
+                events.map((ev) => (
+                  <div
+                    key={ev.id}
+                    className="flex items-center justify-between p-4 border border-[#0a1628]/10 hover:border-[#c9a84c]/40 transition-colors"
+                  >
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-[#0a1628] text-sm">
+                          {ev.title}
+                        </span>
+                        <span
+                          className={`text-[10px] px-2 py-0.5 font-bold uppercase rounded-full ${ev.is_published ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}
+                        >
+                          {ev.is_published ? "Live" : "Hidden"}
+                        </span>
+                      </div>
+                      <div className="text-[#0a1628]/40 text-xs mt-1">
+                        {ev.event_date} {ev.event_time && `· ${ev.event_time}`}{" "}
+                        {ev.location && `· ${ev.location}`}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <button
+                        onClick={() => toggleEvent(ev.id, ev.is_published)}
+                        className="text-xs text-[#0a1628]/40 hover:text-[#c9a84c] uppercase tracking-widest"
+                      >
+                        {ev.is_published ? "Hide" : "Show"}
+                      </button>
+                      <button
+                        onClick={() => deleteEvent(ev.id)}
+                        className={btnDanger}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── TESTIMONIALS ── */}
+        {activeTab === "testimonials" && (
+          <div className="bg-white border border-[#0a1628]/10 p-8 space-y-8">
+            {sectionHead("Testimonials")}
+            <div className="border border-dashed border-[#0a1628]/20 p-6 space-y-4">
+              <p className={labelCls}>Add New Testimonial</p>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>Name *</label>
+                  <input
+                    className={inputCls}
+                    placeholder="e.g. Mrs. Kamau"
+                    value={newTestimonial.name}
+                    onChange={(e) =>
+                      setNewTestimonial({
+                        ...newTestimonial,
+                        name: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>Role</label>
+                  <select
+                    className={inputCls}
+                    value={newTestimonial.role}
+                    onChange={(e) =>
+                      setNewTestimonial({
+                        ...newTestimonial,
+                        role: e.target.value,
+                      })
+                    }
+                  >
+                    {["Parent", "Alumni", "Student", "Staff"].map((r) => (
+                      <option key={r}>{r}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls}>Rating</label>
+                  <select
+                    className={inputCls}
+                    value={newTestimonial.rating}
+                    onChange={(e) =>
+                      setNewTestimonial({
+                        ...newTestimonial,
+                        rating: Number(e.target.value),
+                      })
+                    }
+                  >
+                    {[5, 4, 3, 2, 1].map((r) => (
+                      <option key={r} value={r}>
+                        {r} Star{r !== 1 ? "s" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className={labelCls}>Message *</label>
+                <textarea
+                  rows={3}
+                  className={inputCls + " resize-none"}
+                  value={newTestimonial.message}
+                  onChange={(e) =>
+                    setNewTestimonial({
+                      ...newTestimonial,
+                      message: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <button onClick={addTestimonial} className={btnPrimary}>
+                Add Testimonial
+              </button>
+            </div>
+            <div className="space-y-2">
+              {testimonials.length === 0 ? (
+                <p className="text-[#0a1628]/30 text-sm text-center py-8">
+                  No testimonials yet
+                </p>
+              ) : (
+                testimonials.map((t) => (
+                  <div
+                    key={t.id}
+                    className="flex items-start justify-between p-4 border border-[#0a1628]/10 hover:border-[#c9a84c]/40 transition-colors gap-4"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-bold text-[#0a1628] text-sm">
+                          {t.name}
+                        </span>
+                        <span className="text-[#0a1628]/40 text-xs">
+                          {t.role}
+                        </span>
+                        <span className="text-[#c9a84c] text-xs">
+                          {"★".repeat(t.rating)}
+                        </span>
+                        <span
+                          className={`text-[10px] px-2 py-0.5 font-bold uppercase rounded-full ${t.is_published ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}
+                        >
+                          {t.is_published ? "Live" : "Hidden"}
+                        </span>
+                      </div>
+                      <p className="text-[#0a1628]/60 text-sm italic">
+                        "{t.message}"
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <button
+                        onClick={() => toggleTestimonial(t.id, t.is_published)}
+                        className="text-xs text-[#0a1628]/40 hover:text-[#c9a84c] uppercase tracking-widest"
+                      >
+                        {t.is_published ? "Hide" : "Show"}
+                      </button>
+                      <button
+                        onClick={() => deleteTestimonial(t.id)}
+                        className={btnDanger}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── FAQS ── */}
+        {activeTab === "faqs" && (
+          <div className="bg-white border border-[#0a1628]/10 p-8 space-y-8">
+            {sectionHead("Frequently Asked Questions")}
+            <div className="border border-dashed border-[#0a1628]/20 p-6 space-y-4">
+              <p className={labelCls}>Add New FAQ</p>
+              <div>
+                <label className={labelCls}>Question *</label>
+                <input
+                  className={inputCls}
+                  placeholder="e.g. What are the school fees?"
+                  value={newFaq.question}
+                  onChange={(e) =>
+                    setNewFaq({ ...newFaq, question: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Answer *</label>
+                <textarea
+                  rows={3}
+                  className={inputCls + " resize-none"}
+                  value={newFaq.answer}
+                  onChange={(e) =>
+                    setNewFaq({ ...newFaq, answer: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Category</label>
+                <select
+                  className={inputCls}
+                  value={newFaq.category}
+                  onChange={(e) =>
+                    setNewFaq({ ...newFaq, category: e.target.value })
+                  }
+                >
+                  {[
+                    "General",
+                    "Admissions",
+                    "Academics",
+                    "Activities",
+                    "Fees",
+                  ].map((c) => (
+                    <option key={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              <button onClick={addFaq} className={btnPrimary}>
+                Add FAQ
+              </button>
+            </div>
+            <div className="space-y-2">
+              {faqs.length === 0 ? (
+                <p className="text-[#0a1628]/30 text-sm text-center py-8">
+                  No FAQs yet
+                </p>
+              ) : (
+                faqs.map((f) => (
+                  <div
+                    key={f.id}
+                    className="flex items-start justify-between p-4 border border-[#0a1628]/10 hover:border-[#c9a84c]/40 transition-colors gap-4"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-bold text-[#0a1628] text-sm">
+                          {f.question}
+                        </span>
+                        <span className="text-[10px] px-2 py-0.5 bg-[#c9a84c]/20 text-[#c9a84c] font-bold uppercase rounded-full">
+                          {f.category}
+                        </span>
+                      </div>
+                      <p className="text-[#0a1628]/60 text-sm">{f.answer}</p>
+                    </div>
+                    <button
+                      onClick={() => deleteFaq(f.id)}
+                      className={btnDanger + " shrink-0"}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── GALLERY ── */}
+        {activeTab === "gallery" && (
+          <div className="bg-white border border-[#0a1628]/10 p-8 space-y-8">
+            {sectionHead("Photo Gallery")}
+            <div className="border border-dashed border-[#0a1628]/20 p-6 space-y-4">
+              <p className={labelCls}>Upload New Photo</p>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>Title (optional)</label>
+                  <input
+                    className={inputCls}
+                    placeholder="e.g. Sports Day 2024"
+                    value={newGalleryTitle}
+                    onChange={(e) => setNewGalleryTitle(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>Category</label>
+                  <select
+                    className={inputCls}
+                    value={newGalleryCategory}
+                    onChange={(e) => setNewGalleryCategory(e.target.value)}
+                  >
+                    {[
+                      "General",
+                      "Sports",
+                      "Events",
+                      "Campus",
+                      "Academic",
+                      "Cultural",
+                    ].map((c) => (
+                      <option key={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setNewGalleryFile(e.target.files?.[0] || null)}
+                className="text-sm text-[#0a1628]/60 file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-[#0a1628] file:text-[#c9a84c] file:text-xs file:font-bold file:uppercase file:tracking-widest file:cursor-pointer hover:file:bg-[#c9a84c] hover:file:text-[#0a1628] file:transition-all"
+              />
+              <button
+                onClick={uploadGalleryImage}
+                disabled={uploading || !newGalleryFile}
+                className={btnPrimary}
+              >
+                {uploading ? "Uploading..." : "Upload Photo"}
+              </button>
+            </div>
+            {gallery.length === 0 ? (
+              <p className="text-[#0a1628]/30 text-sm text-center py-8">
+                No photos yet
+              </p>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {gallery.map((item) => (
+                  <div key={item.id} className="relative group">
+                    <img
+                      src={item.image_url}
+                      alt={item.title || "Gallery"}
+                      className="w-full aspect-square object-cover border border-[#0a1628]/10"
+                    />
+                    <div className="absolute inset-0 bg-[#0a1628]/70 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-2">
+                      {item.title && (
+                        <p className="text-white text-xs text-center font-bold">
+                          {item.title}
+                        </p>
+                      )}
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() =>
+                            toggleGallery(item.id, item.is_published)
+                          }
+                          className="text-[#c9a84c] text-[10px] font-bold uppercase tracking-widest hover:text-white transition-colors"
+                        >
+                          {item.is_published ? "Hide" : "Show"}
+                        </button>
+                        <button
+                          onClick={() => deleteGalleryItem(item.id)}
+                          className="text-red-400 text-[10px] font-bold uppercase tracking-widest hover:text-red-300 transition-colors"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                    {!item.is_published && (
+                      <div className="absolute top-2 left-2 bg-gray-800/80 text-white text-[9px] font-bold uppercase px-2 py-0.5">
+                        Hidden
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
