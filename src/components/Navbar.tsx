@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
-
+import { Link } from "react-router-dom";
 export default function Navbar({ settings }: any) {
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<any>({ files: [], sections: [] });
@@ -39,34 +39,42 @@ export default function Navbar({ settings }: any) {
         }`}
       >
         {/* Gold motto bar — hides on scroll */}
-        <div
+        {/*    <div
           className={`bg-[#c9a84c] text-[#0a1628] text-xs tracking-[0.25em] text-center font-bold uppercase overflow-hidden transition-all duration-500 ${
             scrolled ? "max-h-0 py-0" : "max-h-10 py-1.5"
           }`}
         >
           {settings?.motto || "Inspiring Limitless Possibilities"}
         </div>
-
+          */}
         <div className="px-6 md:px-12 py-4 flex items-center justify-between">
           {/* Logo + School Name */}
           <div className="flex items-center gap-3">
-            {settings?.logo_url ? (
-              <img src={settings.logo_url} alt="Logo" className="h-10 w-auto" />
-            ) : (
-              <div className="w-10 h-10 bg-[#c9a84c] flex items-center justify-center font-black text-[#0a1628] text-lg">
-                {settings?.school_name?.[0] || "B"}
-              </div>
-            )}
+            <Link to="/">
+              {settings?.logo_url ? (
+                <img
+                  src={settings.logo_url}
+                  alt="Logo"
+                  className="h-10 w-auto"
+                />
+              ) : (
+                <div className="w-10 h-10 bg-[#c9a84c] flex items-center justify-center font-black text-[#0a1628] text-lg">
+                  {settings?.school_name?.[0] || "B"}
+                </div>
+              )}
+            </Link>
             <div>
-              <div
-                className="text-white font-black text-lg leading-none"
-                style={{ fontFamily: "'Georgia', serif" }}
-              >
-                {settings?.school_name || "Brightside Academy"}
-              </div>
-              <div className="text-[#c9a84c] text-[10px] tracking-[0.2em] uppercase">
-                Excellence in Education
-              </div>
+              <Link to="/">
+                <div
+                  className="text-white font-black text-lg leading-none"
+                  style={{ fontFamily: "'Georgia', serif" }}
+                >
+                  {settings?.school_name || "Brightside Academy"}
+                </div>
+                <div className="text-[#c9a84c] text-[10px] tracking-[0.2em] uppercase">
+                  {settings?.motto || "Inspiring Limitless Possibilities"}
+                </div>
+              </Link>
             </div>
           </div>
 
@@ -134,7 +142,9 @@ export default function Navbar({ settings }: any) {
             >
               Apply Now
             </button>
-
+            <button className="hidden md:block px-5 py-2 bg-[#c9a84c] text-[#0a1628] text-xs font-bold tracking-widest uppercase hover:bg-[#e4c06a] transition-all duration-300">
+              <Link to="/admin">Admin</Link>
+            </button>
             {/* Hamburger */}
             <button
               className="md:hidden flex flex-col gap-1.5 p-1"

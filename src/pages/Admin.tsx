@@ -83,6 +83,13 @@ export default function Admin() {
     type: "success" | "error";
   } | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("general");
+  const [uploadingField, setUploadingField] = useState<string | null>(null);
+  const [savedFields, setSavedFields] = useState<Record<string, boolean>>({});
+  const [addingEvent, setAddingEvent] = useState(false);
+  const [addingTestimonial, setAddingTestimonial] = useState(false);
+  const [addingFaq, setAddingFaq] = useState(false);
+  const [addingGallery, setAddingGallery] = useState(false);
+  const [addingDownload, setAddingDownload] = useState(false);
 
   // New item states
   const [newDownloadTitle, setNewDownloadTitle] = useState("");
@@ -175,7 +182,8 @@ export default function Admin() {
   ) => {
     const file = e.target.files?.[0];
     if (!file || !settings) return;
-    setUploading(true);
+    setUploadingField(field);
+    setSavedFields((prev) => ({ ...prev, [field]: false }));
     try {
       const compressed = await imageCompression(file, {
         maxSizeMB: 0.8,
@@ -183,20 +191,25 @@ export default function Admin() {
         useWebWorker: true,
       });
       const path = `public/${Date.now()}_${file.name}`;
-      await supabase.storage.from("school-images").upload(path, compressed);
+      const { error: uploadError } = await supabase.storage
+        .from("school-images")
+        .upload(path, compressed);
+      if (uploadError) throw uploadError;
       const {
         data: { publicUrl },
       } = supabase.storage.from("school-images").getPublicUrl(path);
-      await supabase
+      const { error: updateError } = await supabase
         .from("school_settings")
         .update({ [field]: publicUrl })
         .eq("id", settings.id);
+      if (updateError) throw updateError;
       setSettings({ ...settings, [field]: publicUrl });
-      showToast("Image uploaded!");
+      setSavedFields((prev) => ({ ...prev, [field]: true }));
+      showToast("Image saved!");
     } catch (err: any) {
       showToast("Upload failed: " + err.message, "error");
     }
-    setUploading(false);
+    setUploadingField(null);
   };
 
   // ─── Downloads ───────────────────────────────────────────
@@ -205,27 +218,32 @@ export default function Admin() {
       showToast("Fill in title and file", "error");
       return;
     }
-    setUploading(true);
-    const path = `public/${Date.now()}_${newDownloadFile.name}`;
-    const { error } = await supabase.storage
-      .from("school-files")
-      .upload(path, newDownloadFile);
-    if (error) {
-      showToast("Upload failed: " + error.message, "error");
-      setUploading(false);
-      return;
+    setAddingDownload(true);
+    try {
+      const path = `public/${Date.now()}_${newDownloadFile.name}`;
+      const { error: storageError } = await supabase.storage
+        .from("school-files")
+        .upload(path, newDownloadFile);
+      if (storageError) throw new Error("Storage: " + storageError.message);
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("school-files").getPublicUrl(path);
+
+      const { error: dbError } = await supabase.from("downloads").insert({
+        title: newDownloadTitle.trim(),
+        file_url: publicUrl,
+      });
+      if (dbError) throw new Error("Database: " + dbError.message);
+
+      setNewDownloadTitle("");
+      setNewDownloadFile(null);
+      await fetchAll();
+      showToast("Document uploaded!");
+    } catch (err: any) {
+      showToast("Upload failed: " + err.message, "error");
     }
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("school-files").getPublicUrl(path);
-    await supabase
-      .from("downloads")
-      .insert({ title: newDownloadTitle, file_url: publicUrl });
-    setNewDownloadTitle("");
-    setNewDownloadFile(null);
-    showToast("Download added!");
-    fetchAll();
-    setUploading(false);
+    setAddingDownload(false);
   };
   const deleteDownload = async (id: string) => {
     if (!confirm("Delete this download?")) return;
@@ -240,11 +258,13 @@ export default function Admin() {
       showToast("Title and date are required", "error");
       return;
     }
+    setAddingEvent(true);
     const { error } = await supabase
       .from("events")
       .insert({ ...newEvent, is_published: true });
     if (error) {
       showToast("Failed: " + error.message, "error");
+      setAddingEvent(false);
       return;
     }
     setNewEvent({
@@ -257,6 +277,7 @@ export default function Admin() {
     });
     showToast("Event added!");
     fetchAll();
+    setAddingEvent(false);
   };
   const deleteEvent = async (id: string) => {
     if (!confirm("Delete this event?")) return;
@@ -278,12 +299,14 @@ export default function Admin() {
       showToast("Name and message required", "error");
       return;
     }
+    setAddingTestimonial(true);
     await supabase
       .from("testimonials")
       .insert({ ...newTestimonial, is_published: true });
     setNewTestimonial({ name: "", role: "Parent", message: "", rating: 5 });
     showToast("Testimonial added!");
     fetchAll();
+    setAddingTestimonial(false);
   };
   const deleteTestimonial = async (id: string) => {
     if (!confirm("Delete?")) return;
@@ -305,11 +328,13 @@ export default function Admin() {
       showToast("Question and answer required", "error");
       return;
     }
+    setAddingFaq(true);
     const maxOrder = Math.max(0, ...faqs.map((f) => f.sort_order));
     await supabase.from("faqs").insert({ ...newFaq, sort_order: maxOrder + 1 });
     setNewFaq({ question: "", answer: "", category: "General" });
     showToast("FAQ added!");
     fetchAll();
+    setAddingFaq(false);
   };
   const deleteFaq = async (id: string) => {
     if (!confirm("Delete?")) return;
@@ -324,7 +349,7 @@ export default function Admin() {
       showToast("Select an image", "error");
       return;
     }
-    setUploading(true);
+    setAddingGallery(true);
     try {
       const compressed = await imageCompression(newGalleryFile, {
         maxSizeMB: 0.8,
@@ -353,7 +378,7 @@ export default function Admin() {
     } catch (err: any) {
       showToast("Upload failed: " + err.message, "error");
     }
-    setUploading(false);
+    setAddingGallery(false);
   };
   const deleteGalleryItem = async (id: string) => {
     if (!confirm("Delete?")) return;
@@ -629,12 +654,10 @@ export default function Admin() {
         {activeTab === "images" && (
           <div className="bg-white border border-[#0a1628]/10 p-8 space-y-8">
             {sectionHead("Site Images")}
-            {uploading && (
-              <div className="flex items-center gap-3 p-4 bg-[#f8f5ef] border border-[#c9a84c]/30">
-                <div className="w-5 h-5 border-2 border-[#c9a84c] border-t-transparent rounded-full animate-spin" />
-                <span className="text-sm text-[#0a1628]/70">Uploading...</span>
-              </div>
-            )}
+            <p className="text-xs text-[#0a1628]/40">
+              Images are saved automatically when you select a file. Wait for
+              the ✅ confirmation before leaving.
+            </p>
             {[
               {
                 field: "hero_bg_url",
@@ -652,8 +675,24 @@ export default function Admin() {
                 hint: "Shown in navbar. Use PNG with transparent background.",
               },
             ].map(({ field, label, hint }) => (
-              <div key={field} className="border border-[#0a1628]/10 p-6">
-                <label className={labelCls}>{label}</label>
+              <div
+                key={field}
+                className={`border p-6 transition-all duration-300 ${savedFields[field] ? "border-green-400/50 bg-green-50/30" : "border-[#0a1628]/10"}`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <label className={labelCls}>{label}</label>
+                  {uploadingField === field && (
+                    <div className="flex items-center gap-2 text-[#c9a84c] text-xs font-bold uppercase tracking-widest">
+                      <div className="w-3 h-3 border-2 border-[#c9a84c] border-t-transparent rounded-full animate-spin" />
+                      Uploading...
+                    </div>
+                  )}
+                  {savedFields[field] && uploadingField !== field && (
+                    <span className="text-green-600 text-xs font-bold uppercase tracking-widest">
+                      ✅ Saved
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-[#0a1628]/40 mb-4">{hint}</p>
                 {(settings as any)[field] && (
                   <img
@@ -665,9 +704,9 @@ export default function Admin() {
                 <input
                   type="file"
                   accept="image/*"
-                  disabled={uploading}
+                  disabled={uploadingField !== null}
                   onChange={(e) => handleImageUpload(e, field)}
-                  className="text-sm text-[#0a1628]/60 file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-[#0a1628] file:text-[#c9a84c] file:text-xs file:font-bold file:uppercase file:tracking-widest file:cursor-pointer hover:file:bg-[#c9a84c] hover:file:text-[#0a1628] file:transition-all"
+                  className="text-sm text-[#0a1628]/60 file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-[#0a1628] file:text-[#c9a84c] file:text-xs file:font-bold file:uppercase file:tracking-widest file:cursor-pointer hover:file:bg-[#c9a84c] hover:file:text-[#0a1628] file:transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                 />
               </div>
             ))}
@@ -696,10 +735,12 @@ export default function Admin() {
               />
               <button
                 onClick={uploadDownload}
-                disabled={uploading || !newDownloadTitle || !newDownloadFile}
+                disabled={
+                  addingDownload || !newDownloadTitle || !newDownloadFile
+                }
                 className={btnPrimary}
               >
-                {uploading ? "Uploading..." : "Upload Document"}
+                {addingDownload ? "Uploading..." : "Upload Document"}
               </button>
             </div>
             <div className="space-y-2">
@@ -829,8 +870,12 @@ export default function Admin() {
                   }
                 />
               </div>
-              <button onClick={addEvent} className={btnPrimary}>
-                Add Event
+              <button
+                onClick={addEvent}
+                disabled={addingEvent}
+                className={btnPrimary}
+              >
+                {addingEvent ? "Adding..." : "Add Event"}
               </button>
             </div>
             <div className="space-y-2">
@@ -953,8 +998,12 @@ export default function Admin() {
                   }
                 />
               </div>
-              <button onClick={addTestimonial} className={btnPrimary}>
-                Add Testimonial
+              <button
+                onClick={addTestimonial}
+                disabled={addingTestimonial}
+                className={btnPrimary}
+              >
+                {addingTestimonial ? "Adding..." : "Add Testimonial"}
               </button>
             </div>
             <div className="space-y-2">
@@ -1058,8 +1107,12 @@ export default function Admin() {
                   ))}
                 </select>
               </div>
-              <button onClick={addFaq} className={btnPrimary}>
-                Add FAQ
+              <button
+                onClick={addFaq}
+                disabled={addingFaq}
+                className={btnPrimary}
+              >
+                {addingFaq ? "Adding..." : "Add FAQ"}
               </button>
             </div>
             <div className="space-y-2">
@@ -1141,10 +1194,10 @@ export default function Admin() {
               />
               <button
                 onClick={uploadGalleryImage}
-                disabled={uploading || !newGalleryFile}
+                disabled={addingGallery || !newGalleryFile}
                 className={btnPrimary}
               >
-                {uploading ? "Uploading..." : "Upload Photo"}
+                {addingGallery ? "Uploading..." : "Upload Photo"}
               </button>
             </div>
             {gallery.length === 0 ? (
