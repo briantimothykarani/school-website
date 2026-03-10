@@ -6,7 +6,6 @@ import About from "../sections/About";
 import Downloads from "../sections/Downloads";
 import Contact from "../sections/Contact";
 import NoticeBoard from "../components/NoticeBoard";
-import Events from "../sections/Events";
 import Testimonials from "../sections/Testimonials";
 import Gallery from "../sections/Gallery";
 import FAQSection from "../sections/FAQSection";
@@ -109,7 +108,6 @@ export default function Home() {
       <Navbar settings={settings} />
       <NoticeBoard settings={settings} />
       <Hero settings={settings} />
-      <Events />
       <About settings={settings} />
       <Gallery />
       <Testimonials />

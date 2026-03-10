@@ -67,7 +67,8 @@ type Tab =
   | "events"
   | "testimonials"
   | "faqs"
-  | "gallery";
+  | "gallery"
+  | "pages";
 
 export default function Admin() {
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -220,20 +221,37 @@ export default function Admin() {
     }
     setAddingDownload(true);
     try {
+      // Step 1: Check session
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      console.log("Session:", session?.user?.email);
+      if (!session) throw new Error("Not logged in — no session found");
+
+      // Step 2: Upload to storage
       const path = `public/${Date.now()}_${newDownloadFile.name}`;
-      const { error: storageError } = await supabase.storage
+      console.log("Uploading to path:", path);
+      const { data: storageData, error: storageError } = await supabase.storage
         .from("school-files")
         .upload(path, newDownloadFile);
+      console.log("Storage result:", storageData, storageError);
       if (storageError) throw new Error("Storage: " + storageError.message);
 
+      // Step 3: Get public URL
       const {
         data: { publicUrl },
       } = supabase.storage.from("school-files").getPublicUrl(path);
+      console.log("Public URL:", publicUrl);
 
-      const { error: dbError } = await supabase.from("downloads").insert({
-        title: newDownloadTitle.trim(),
-        file_url: publicUrl,
-      });
+      // Step 4: Insert into DB
+      const { data: dbData, error: dbError } = await supabase
+        .from("downloads")
+        .insert({
+          title: newDownloadTitle.trim(),
+          file_url: publicUrl,
+        })
+        .select();
+      console.log("DB insert result:", dbData, dbError);
       if (dbError) throw new Error("Database: " + dbError.message);
 
       setNewDownloadTitle("");
@@ -241,6 +259,7 @@ export default function Admin() {
       await fetchAll();
       showToast("Document uploaded!");
     } catch (err: any) {
+      console.error("Upload error:", err);
       showToast("Upload failed: " + err.message, "error");
     }
     setAddingDownload(false);
@@ -394,7 +413,56 @@ export default function Admin() {
     fetchAll();
   };
 
-  // ─── UI Helpers ──────────────────────────────────────────
+  // ─── Pages (site_sections) ───────────────────────────────
+  const pageSlugs = [
+    { slug: "about", label: "About Us" },
+    { slug: "admissions", label: "Admissions" },
+    { slug: "events", label: "Events" },
+    { slug: "downloads", label: "Downloads" },
+    { slug: "contact", label: "Contact" },
+  ];
+  const [pages, setPages] = useState<
+    Record<string, { id?: string; title: string; content: string }>
+  >({});
+  const [savingPage, setSavingPage] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase
+      .from("site_sections")
+      .select("*")
+      .then(({ data }) => {
+        const map: Record<string, any> = {};
+        (data || []).forEach((s: any) => {
+          map[s.slug] = s;
+        });
+        // Pre-fill with defaults for any missing slugs
+        pageSlugs.forEach(({ slug, label }) => {
+          if (!map[slug]) map[slug] = { title: label, content: "" };
+        });
+        setPages(map);
+      });
+  }, []);
+
+  const savePage = async (slug: string) => {
+    const page = pages[slug];
+    if (!page) return;
+    setSavingPage(slug);
+    if (page.id) {
+      await supabase
+        .from("site_sections")
+        .update({ title: page.title, content: page.content })
+        .eq("id", page.id);
+    } else {
+      const { data } = await supabase
+        .from("site_sections")
+        .insert({ slug, title: page.title, content: page.content })
+        .select()
+        .single();
+      if (data) setPages((prev) => ({ ...prev, [slug]: data }));
+    }
+    showToast(`${page.title} saved!`);
+    setSavingPage(null);
+  };
   const inputCls =
     "w-full border border-[#0a1628]/20 p-3 focus:outline-none focus:border-[#c9a84c] transition-colors text-[#0a1628] bg-white";
   const labelCls =
@@ -423,6 +491,7 @@ export default function Admin() {
     { id: "general", label: "School Info", icon: "🏫" },
     { id: "notice", label: "Notice", icon: "📢" },
     { id: "images", label: "Images", icon: "🖼️" },
+    { id: "pages", label: "Pages", icon: "📝" },
     {
       id: "downloads",
       label: "Downloads",
@@ -710,6 +779,72 @@ export default function Admin() {
                 />
               </div>
             ))}
+          </div>
+        )}
+
+        {/* ── PAGES ── */}
+        {activeTab === "pages" && (
+          <div className="bg-white border border-[#0a1628]/10 p-8 space-y-6">
+            {sectionHead("Page Content")}
+            <p className="text-xs text-[#0a1628]/40 -mt-2">
+              Edit the content shown in each navbar modal. Changes appear
+              instantly on the website.
+            </p>
+            {pageSlugs.map(({ slug, label }) => {
+              const page = pages[slug] || { title: label, content: "" };
+              return (
+                <div
+                  key={slug}
+                  className="border border-[#0a1628]/10 p-6 space-y-4"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="h-px w-6 bg-[#c9a84c]" />
+                    <span className="text-[#c9a84c] text-xs font-bold tracking-widest uppercase">
+                      {label}
+                    </span>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Page Title</label>
+                    <input
+                      className={inputCls}
+                      value={page.title}
+                      onChange={(e) =>
+                        setPages((prev) => ({
+                          ...prev,
+                          [slug]: { ...page, title: e.target.value },
+                        }))
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Content</label>
+                    <textarea
+                      rows={5}
+                      className={inputCls + " resize-none"}
+                      value={page.content}
+                      placeholder={`Write the content for the ${label} page...`}
+                      onChange={(e) =>
+                        setPages((prev) => ({
+                          ...prev,
+                          [slug]: { ...page, content: e.target.value },
+                        }))
+                      }
+                    />
+                    <p className="text-xs text-[#0a1628]/30 mt-1">
+                      Tip: Use a blank line between paragraphs. Use • for bullet
+                      points.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => savePage(slug)}
+                    disabled={savingPage === slug}
+                    className={btnPrimary}
+                  >
+                    {savingPage === slug ? "Saving..." : `Save ${label}`}
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
 

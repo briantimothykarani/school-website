@@ -7,7 +7,7 @@ import About from "./sections/About";
 import NoticeBoard from "./components/NoticeBoard";
 import Login from "./pages/Login";
 import Admin from "./pages/Admin";
-
+import Events from "./modals/Events";
 interface ProtectedRouteProps {
   children: JSX.Element;
 }
@@ -97,6 +97,7 @@ export default function App() {
           }
         />
         <Route path="/login" element={<Login />} />
+        <Route path="/events" element={<Events />} />
         <Route
           path="/admin"
           element={

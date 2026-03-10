@@ -204,12 +204,12 @@ export default function Navbar({ settings }: any) {
                   <h2 className="text-2xl font-black text-[#0a1628] mb-2 capitalize">
                     {activeModal}
                   </h2>
-                  <p className="text-[#0a1628]/60">Content coming soon.</p>
+                  <p className="text-[#0a1628]/60">{settings.events}</p>
                   <button
                     onClick={() => setActiveModal(null)}
                     className="mt-4 px-6 py-2 bg-[#0a1628] text-white text-sm font-bold uppercase tracking-widest"
                   >
-                    Close
+                    x
                   </button>
                 </div>
               </div>
