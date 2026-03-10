@@ -1,13 +1,10 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "./lib/supabase";
-import Navbar from "./components/Navbar";
-import Hero from "./sections/Hero";
-import About from "./sections/About";
-import NoticeBoard from "./components/NoticeBoard";
+import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Admin from "./pages/Admin";
-import Events from "./modals/Events";
+
 interface ProtectedRouteProps {
   children: JSX.Element;
 }
@@ -21,18 +18,15 @@ function ProtectedRoute({ children }: ProtectedRouteProps) {
     async function checkAccess() {
       const { data: sessionData } = await supabase.auth.getSession();
       const session = sessionData.session;
-
       if (!session) {
         setStatus("denied");
         return;
       }
-
       const { data } = await supabase
         .from("authorized_admins")
         .select("email")
         .eq("email", session.user.email)
         .single();
-
       setStatus(data ? "allowed" : "denied");
     }
     checkAccess();
@@ -40,8 +34,8 @@ function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (status === "loading") {
     return (
-      <div className="h-screen flex items-center justify-center text-gray-500">
-        Checking admin access...
+      <div className="h-screen flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-[#c9a84c] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -54,59 +48,20 @@ function ProtectedRoute({ children }: ProtectedRouteProps) {
 }
 
 export default function App() {
-  const [settings, setSettings] = useState<any>(null);
-
-  useEffect(() => {
-    supabase
-      .from("school_settings")
-      .select("*")
-      .order("id")
-      .limit(1)
-      .then(({ data }) => {
-        const row = data?.[0];
-        if (row) {
-          document.documentElement.style.setProperty(
-            "--primary",
-            row.primary_color || "#1e40af",
-          );
-          setSettings(row);
-        }
-      });
-  }, []);
-
-  if (!settings) {
-    return (
-      <div className="h-screen flex items-center justify-center text-gray-500">
-        Loading...
-      </div>
-    );
-  }
-
   return (
-    <div style={{ "--primary": settings.primary_color } as React.CSSProperties}>
-      <Navbar settings={settings} />
-      <NoticeBoard settings={settings} />
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <>
-              <Hero settings={settings} />
-              <About settings={settings} />
-            </>
-          }
-        />
-        <Route path="/login" element={<Login />} />
-        <Route path="/events" element={<Events />} />
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute>
-              <Admin settings={settings} setSettings={setSettings} />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
-    </div>
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/login" element={<Login />} />
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute>
+            <Admin />
+          </ProtectedRoute>
+        }
+      />
+      {/* Catch-all redirect */}
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
   );
 }

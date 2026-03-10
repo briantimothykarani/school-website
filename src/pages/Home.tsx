@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import Navbar from "../components/Navbar";
-import Hero from "../sections/Hero";
-import About from "../sections/About";
-import Downloads from "../sections/Downloads";
-import Contact from "../sections/Contact";
 import NoticeBoard from "../components/NoticeBoard";
+import Hero from "../sections/Hero";
+import About from "../modals/About";
+import Admissions from "../modals/Admissions";
+import Events from "../modals/Events";
+import Downloads from "../modals/Downloads";
+import Contact from "../modals/Contact";
 import Testimonials from "../sections/Testimonials";
 import Gallery from "../sections/Gallery";
 import FAQSection from "../sections/FAQSection";
@@ -26,6 +28,8 @@ interface SchoolSettings {
   show_notice: boolean;
   notice_expires_at: string;
 }
+
+type SectionSlug = "about" | "admissions" | "events" | "downloads" | "contact";
 
 function WhatsAppButton({ phone }: { phone: string }) {
   const cleaned = phone?.replace(/\D/g, "") || "254700000000";
@@ -77,6 +81,15 @@ export default function Home() {
     }
   }
 
+  // Smooth scroll to a section by its id
+  const scrollTo = (slug: SectionSlug) => {
+    const el = document.getElementById(slug);
+    if (!el) return;
+    const navbarHeight = 72; // adjust to match your navbar's height
+    const top = el.getBoundingClientRect().top + window.scrollY - navbarHeight;
+    window.scrollTo({ top, behavior: "smooth" });
+  };
+
   if (error)
     return (
       <div className="p-20 text-center text-red-500">
@@ -105,15 +118,35 @@ export default function Home() {
 
   return (
     <>
-      <Navbar settings={settings} />
+      <Navbar settings={settings} onNavClick={scrollTo} />
       <NoticeBoard settings={settings} />
-      <Hero settings={settings} />
-      <About settings={settings} />
-      <Gallery />
+
+      <Hero settings={settings} onNavClick={scrollTo} />
+
+      <section id="about">
+        <About />
+      </section>
+
+      <section id="admissions">
+        <Admissions />
+      </section>
+
       <Testimonials />
+      <Gallery />
       <FAQSection />
-      <Downloads />
-      <Contact settings={settings} />
+
+      <section id="events">
+        <Events />
+      </section>
+
+      <section id="downloads">
+        <Downloads />
+      </section>
+
+      <section id="contact">
+        <Contact />
+      </section>
+
       <WhatsAppButton phone={settings.phone} />
     </>
   );
