@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import emailjs from "@emailjs/browser";
 
 interface Settings {
   school_name: string;
@@ -15,6 +16,7 @@ export default function Contact() {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
     "idle",
   );
+  const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
     supabase
@@ -29,20 +31,40 @@ export default function Contact() {
   }, []);
 
   const handleSubmit = async () => {
-    if (!form.name || !form.email || !form.message) return;
+    if (!form.name || !form.email || !form.message || !settings?.email) return;
     setStatus("sending");
-    // Replace this with your preferred form handler (e.g. Resend, Formspree, EmailJS)
-    // For now, simulate a short delay
-    await new Promise((r) => setTimeout(r, 1200));
-    setStatus("sent");
+    setErrorMsg("");
+
+    try {
+      await emailjs.send(
+        import.meta.env.VITE_EMAILJS_SERVICE_ID,
+        import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+        {
+          from_name: form.name,
+          from_email: form.email,
+          message: form.message,
+          to_email: settings.email,
+          reply_to: form.email,
+        },
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
+      );
+
+      setStatus("sent");
+      setForm({ name: "", email: "", message: "" });
+    } catch (err: any) {
+      console.error("EmailJS error:", err);
+      setStatus("error");
+      setErrorMsg(
+        err?.text || err?.message || "Failed to send. Please try again.",
+      );
+    }
   };
 
-  if (loading) return <ModalSkeleton />;
+  if (loading) return <Skeleton />;
   if (!settings) return null;
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-10">
-      {/* Header */}
       <div className="flex items-center gap-3 mb-8">
         <div className="h-px w-10 bg-[#c9a84c]" />
         <span className="text-[#c9a84c] text-xs tracking-[0.3em] uppercase font-bold">
@@ -126,7 +148,7 @@ export default function Contact() {
           </div>
 
           {settings.map_url && (
-            <div className="border border-[#0a1628]/10 overflow-hidden mt-4">
+            <div className="border border-[#0a1628]/10 overflow-hidden">
               <iframe
                 src={settings.map_url}
                 width="100%"
@@ -140,7 +162,7 @@ export default function Contact() {
           )}
         </div>
 
-        {/* Right: Contact Form */}
+        {/* Right: Form */}
         <div>
           {status === "sent" ? (
             <div className="h-full flex flex-col items-center justify-center text-center py-12 border border-green-200 bg-green-50/50">
@@ -165,12 +187,30 @@ export default function Contact() {
               >
                 Message Sent!
               </h3>
-              <p className="text-[#0a1628]/50 text-sm">
+              <p className="text-[#0a1628]/50 text-sm mb-6">
                 We'll get back to you within 24 hours.
               </p>
+              <button
+                onClick={() => setStatus("idle")}
+                className="px-6 py-2 border border-[#0a1628]/20 text-[#0a1628] text-xs font-bold uppercase tracking-widest hover:border-[#c9a84c] hover:text-[#c9a84c] transition-all"
+              >
+                Send Another
+              </button>
             </div>
           ) : (
             <div className="space-y-4">
+              {status === "error" && (
+                <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200">
+                  <span className="text-red-500 text-lg leading-none">⚠</span>
+                  <div>
+                    <p className="text-red-700 text-sm font-bold">
+                      Failed to send
+                    </p>
+                    <p className="text-red-500 text-xs mt-0.5">{errorMsg}</p>
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label className="block text-[10px] font-bold uppercase tracking-widest text-[#0a1628]/50 mb-2">
                   Your Name
@@ -182,6 +222,7 @@ export default function Contact() {
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                 />
               </div>
+
               <div>
                 <label className="block text-[10px] font-bold uppercase tracking-widest text-[#0a1628]/50 mb-2">
                   Email Address
@@ -194,6 +235,7 @@ export default function Contact() {
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                 />
               </div>
+
               <div>
                 <label className="block text-[10px] font-bold uppercase tracking-widest text-[#0a1628]/50 mb-2">
                   Message
@@ -208,6 +250,7 @@ export default function Contact() {
                   }
                 />
               </div>
+
               <button
                 onClick={handleSubmit}
                 disabled={
@@ -216,10 +259,21 @@ export default function Contact() {
                   !form.email ||
                   !form.message
                 }
-                className="w-full px-6 py-3 bg-[#0a1628] text-[#c9a84c] text-xs font-bold tracking-widest uppercase hover:bg-[#c9a84c] hover:text-[#0a1628] transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full px-6 py-3 bg-[#0a1628] text-[#c9a84c] text-xs font-bold tracking-widest uppercase hover:bg-[#c9a84c] hover:text-[#0a1628] transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                {status === "sending" ? "Sending..." : "Send Message"}
+                {status === "sending" ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-[#c9a84c] border-t-transparent rounded-full animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  "Send Message"
+                )}
               </button>
+
+              <p className="text-[#0a1628]/30 text-xs text-center">
+                Your message goes directly to {settings.email}
+              </p>
             </div>
           )}
         </div>
@@ -228,7 +282,7 @@ export default function Contact() {
   );
 }
 
-function ModalSkeleton() {
+function Skeleton() {
   return (
     <div className="max-w-4xl mx-auto px-6 py-10 animate-pulse">
       <div className="h-4 w-32 bg-[#0a1628]/10 mb-8" />
