@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import Navbar from "../components/Navbar";
 import NoticeBoard from "../components/NoticeBoard";
+import Footer from "../components/Footer";
 import Hero from "../sections/Hero";
 import About from "../modals/About";
 import Admissions from "../modals/Admissions";
@@ -81,11 +82,10 @@ export default function Home() {
     }
   }
 
-  // Smooth scroll to a section by its id
   const scrollTo = (slug: SectionSlug) => {
     const el = document.getElementById(slug);
     if (!el) return;
-    const navbarHeight = 72; // adjust to match your navbar's height
+    const navbarHeight = 72;
     const top = el.getBoundingClientRect().top + window.scrollY - navbarHeight;
     window.scrollTo({ top, behavior: "smooth" });
   };
@@ -119,10 +119,10 @@ export default function Home() {
   return (
     <>
       <Navbar settings={settings} onNavClick={scrollTo} />
-      <NoticeBoard settings={settings} />
 
       <Hero settings={settings} onNavClick={scrollTo} />
 
+      <NoticeBoard settings={settings} />
       <section id="about">
         <About />
       </section>
@@ -147,6 +147,7 @@ export default function Home() {
         <Contact />
       </section>
 
+      <Footer />
       <WhatsAppButton phone={settings.phone} />
     </>
   );

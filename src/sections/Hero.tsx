@@ -1,3 +1,5 @@
+import { motion } from 'framer-motion';
+
 export default function Hero({ settings }: any) {
   const bgUrl =
     settings?.hero_bg_url ||
@@ -27,7 +29,13 @@ export default function Hero({ settings }: any) {
             className="h-16 mb-6 drop-shadow-lg"
           />
         )}
-
+<motion.button
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+    >
         <div className="flex items-center gap-3 mb-5">
           <div className="h-px w-10 bg-[#c9a84c]" />
           <span className="text-[#c9a84c] text-xs tracking-[0.3em] uppercase font-bold">
@@ -63,7 +71,7 @@ export default function Hero({ settings }: any) {
           </a>
         </div>
       </div>
-
+    </motion.button>
       {/* Scroll indicator */}
       <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/40">
         <span className="text-xs tracking-widest uppercase">Scroll</span>

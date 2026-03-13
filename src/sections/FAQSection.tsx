@@ -39,7 +39,6 @@ export default function FAQSection() {
   return (
     <section className="bg-[#f8f5ef] py-24 px-6 md:px-16">
       <div className="max-w-4xl mx-auto">
-        {/* Label */}
         <div className="flex items-center gap-3 mb-4">
           <div className="h-px w-10 bg-[#c9a84c]" />
           <span className="text-[#c9a84c] text-xs tracking-[0.3em] uppercase font-bold">
@@ -103,16 +102,27 @@ export default function FAQSection() {
                   >
                     {faq.question}
                   </span>
-                  <span
-                    className={`shrink-0 w-8 h-8 flex items-center justify-center border font-black text-lg transition-all duration-300 ${
+
+                  {/* Chevron — no box */}
+                  <svg
+                    className={`shrink-0 w-5 h-5 transition-all duration-300 ${
                       openId === faq.id
-                        ? "bg-[#c9a84c] border-[#c9a84c] text-[#0a1628] rotate-45"
-                        : "border-[#0a1628]/20 text-[#0a1628] group-hover:border-[#c9a84c]"
+                        ? "rotate-180 text-[#c9a84c]"
+                        : "text-[#0a1628]/40 group-hover:text-[#c9a84c]"
                     }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    +
-                  </span>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2.5}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
                 </button>
+
                 {openId === faq.id && (
                   <div className="px-4 pb-5">
                     <p className="text-[#0a1628]/65 leading-relaxed">

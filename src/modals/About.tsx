@@ -101,14 +101,11 @@ export default function About() {
         {/* Right: Image + Map */}
         <div className="space-y-4">
           {settings.about_image_url && (
-            <div className="relative">
-              <img
-                src={settings.about_image_url}
-                alt={settings.school_name}
-                className="w-full aspect-[4/3] object-cover"
-              />
-              <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#c9a84c]" />
-            </div>
+            <img
+              src={settings.about_image_url}
+              alt={settings.school_name}
+              className="w-full aspect-[4/3] object-cover border-b-4 border-[#c9a84c]"
+            />
           )}
           {settings.map_url && (
             <div className="border border-[#0a1628]/10 overflow-hidden">
