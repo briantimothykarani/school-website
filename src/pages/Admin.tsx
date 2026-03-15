@@ -183,7 +183,7 @@ export default function Admin() {
   ) => {
     const file = e.target.files?.[0];
     if (!file || !settings) return;
-    setUploadingField(field);
+    _setUploadingField(field);
     setSavedFields((prev) => ({ ...prev, [field]: false }));
     try {
       const compressed = await imageCompression(file, {
@@ -210,7 +210,7 @@ export default function Admin() {
     } catch (err: any) {
       showToast("Upload failed: " + err.message, "error");
     }
-    setUploadingField(null);
+    _setUploadingField(null);
   };
 
   // ─── Downloads ───────────────────────────────────────────
@@ -748,13 +748,13 @@ export default function Admin() {
               >
                 <div className="flex items-center justify-between mb-1">
                   <label className={labelCls}>{label}</label>
-                  {uploadingField === field && (
+                  {_uploadingField === field && (
                     <div className="flex items-center gap-2 text-[#c9a84c] text-xs font-bold uppercase tracking-widest">
                       <div className="w-3 h-3 border-2 border-[#c9a84c] border-t-transparent rounded-full animate-spin" />
                       Uploading...
                     </div>
                   )}
-                  {savedFields[field] && uploadingField !== field && (
+                  {savedFields[field] && _uploadingField !== field && (
                     <span className="text-green-600 text-xs font-bold uppercase tracking-widest">
                       ✅ Saved
                     </span>
@@ -771,7 +771,7 @@ export default function Admin() {
                 <input
                   type="file"
                   accept="image/*"
-                  disabled={uploadingField !== null}
+                  disabled={_uploadingField !== null}
                   onChange={(e) => handleImageUpload(e, field)}
                   className="text-sm text-[#0a1628]/60 file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-[#0a1628] file:text-[#c9a84c] file:text-xs file:font-bold file:uppercase file:tracking-widest file:cursor-pointer hover:file:bg-[#c9a84c] hover:file:text-[#0a1628] file:transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                 />
