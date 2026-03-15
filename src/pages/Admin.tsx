@@ -78,14 +78,13 @@ export default function Admin() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
-  const [_uploading, _setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{
     msg: string;
     type: "success" | "error";
   } | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("general");
-  const [_uploadingField, _setUploadingField] = useState<string | null>(null);
+  const [uploadingField, setUploadingField] = useState<string | null>(null);
   const [savedFields, setSavedFields] = useState<Record<string, boolean>>({});
   const [addingEvent, setAddingEvent] = useState(false);
   const [addingTestimonial, setAddingTestimonial] = useState(false);
@@ -382,15 +381,13 @@ export default function Admin() {
         data: { publicUrl },
       } = supabase.storage.from("school-images").getPublicUrl(path);
       const maxOrder = Math.max(0, ...gallery.map((g) => g.sort_order));
-      await supabase
-        .from("gallery")
-        .insert({
-          title: newGalleryTitle,
-          category: newGalleryCategory,
-          image_url: publicUrl,
-          sort_order: maxOrder + 1,
-          is_published: true,
-        });
+      await supabase.from("gallery").insert({
+        title: newGalleryTitle,
+        category: newGalleryCategory,
+        image_url: publicUrl,
+        sort_order: maxOrder + 1,
+        is_published: true,
+      });
       setNewGalleryTitle("");
       setNewGalleryFile(null);
       showToast("Image added to gallery!");
