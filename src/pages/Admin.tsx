@@ -52,6 +52,7 @@ interface FAQ {
 }
 interface GalleryItem {
   id: string;
+
   title: string;
   image_url: string;
   category: string;
@@ -84,7 +85,7 @@ export default function Admin() {
     type: "success" | "error";
   } | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("general");
-  const [uploadingField, setUploadingField] = useState<string | null>(null);
+  const [_uploadingField, _setUploadingField] = useState<string | null>(null);
   const [savedFields, setSavedFields] = useState<Record<string, boolean>>({});
   const [addingEvent, setAddingEvent] = useState(false);
   const [addingTestimonial, setAddingTestimonial] = useState(false);

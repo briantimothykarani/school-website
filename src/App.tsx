@@ -6,7 +6,7 @@ import Login from "./pages/Login";
 import Admin from "./pages/Admin";
 
 interface ProtectedRouteProps {
-  children: JSX.Element;
+  children:React.ReactElement;
 }
 
 function ProtectedRoute({ children }: ProtectedRouteProps) {
