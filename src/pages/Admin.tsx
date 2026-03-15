@@ -78,7 +78,7 @@ export default function Admin() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
-  const [uploading, setUploading] = useState(false);
+  const [_uploading, _setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{
     msg: string;
