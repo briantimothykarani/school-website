@@ -13,6 +13,7 @@ export default function FAQSection() {
   const [loading, setLoading] = useState(true);
   const [openId, setOpenId] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState("All");
+  const p = "var(--primary)";
 
   useEffect(() => {
     supabase
@@ -40,8 +41,11 @@ export default function FAQSection() {
     <section className="bg-[#f8f5ef] py-24 px-6 md:px-16">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center gap-3 mb-4">
-          <div className="h-px w-10 bg-[#c9a84c]" />
-          <span className="text-[#c9a84c] text-xs tracking-[0.3em] uppercase font-bold">
+          <div className="h-px w-10" style={{ backgroundColor: p }} />
+          <span
+            className="text-xs tracking-[0.3em] uppercase font-bold"
+            style={{ color: p }}
+          >
             FAQ
           </span>
         </div>
@@ -50,21 +54,33 @@ export default function FAQSection() {
           className="text-4xl md:text-5xl font-black text-[#0a1628] mb-10"
           style={{ fontFamily: "'Georgia', serif" }}
         >
-          Frequently Asked <span className="text-[#c9a84c]">Questions</span>
+          Frequently Asked <span style={{ color: p }}>Questions</span>
         </h2>
 
-        {/* Category filters */}
         {!loading && categories.length > 1 && (
           <div className="flex flex-wrap gap-2 mb-8">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`px-4 py-2 text-xs font-bold tracking-widest uppercase transition-all duration-200 ${
+                className="px-4 py-2 text-xs font-bold tracking-widest uppercase transition-all duration-200"
+                style={
                   activeCategory === cat
-                    ? "bg-[#0a1628] text-[#c9a84c]"
-                    : "bg-white border border-[#0a1628]/20 text-[#0a1628]/60 hover:border-[#c9a84c]"
-                }`}
+                    ? { backgroundColor: "#0a1628", color: p }
+                    : {
+                        backgroundColor: "white",
+                        border: "1px solid rgba(10,22,40,0.2)",
+                        color: "rgba(10,22,40,0.6)",
+                      }
+                }
+                onMouseEnter={(e) => {
+                  if (activeCategory !== cat)
+                    e.currentTarget.style.borderColor = p;
+                }}
+                onMouseLeave={(e) => {
+                  if (activeCategory !== cat)
+                    e.currentTarget.style.borderColor = "rgba(10,22,40,0.2)";
+                }}
               >
                 {cat}
               </button>
@@ -72,7 +88,6 @@ export default function FAQSection() {
           </div>
         )}
 
-        {/* Loading */}
         {loading && (
           <div className="space-y-3">
             {[...Array(5)].map((_, i) => (
@@ -81,7 +96,6 @@ export default function FAQSection() {
           </div>
         )}
 
-        {/* FAQ list */}
         {!loading && (
           <div className="border-t border-[#0a1628]/10">
             {filtered.map((faq) => (
@@ -94,25 +108,24 @@ export default function FAQSection() {
                   className="w-full text-left py-5 px-4 flex justify-between items-center gap-4 group"
                 >
                   <span
-                    className={`font-bold text-base transition-colors duration-200 ${
-                      openId === faq.id
-                        ? "text-[#c9a84c]"
-                        : "text-[#0a1628] group-hover:text-[#c9a84c]"
-                    }`}
+                    className="font-bold text-base transition-colors duration-200"
+                    style={{ color: openId === faq.id ? p : "#0a1628" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = p)}
+                    onMouseLeave={(e) => {
+                      if (openId !== faq.id)
+                        e.currentTarget.style.color = "#0a1628";
+                    }}
                   >
                     {faq.question}
                   </span>
-
-                  {/* Chevron — no box */}
                   <svg
-                    className={`shrink-0 w-5 h-5 transition-all duration-300 ${
-                      openId === faq.id
-                        ? "rotate-180 text-[#c9a84c]"
-                        : "text-[#0a1628]/40 group-hover:text-[#c9a84c]"
-                    }`}
+                    className={`shrink-0 w-5 h-5 transition-all duration-300 ${openId === faq.id ? "rotate-180" : ""}`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
+                    style={{
+                      color: openId === faq.id ? p : "rgba(10,22,40,0.4)",
+                    }}
                   >
                     <path
                       strokeLinecap="round"
@@ -122,7 +135,6 @@ export default function FAQSection() {
                     />
                   </svg>
                 </button>
-
                 {openId === faq.id && (
                   <div className="px-4 pb-5">
                     <p className="text-[#0a1628]/65 leading-relaxed">

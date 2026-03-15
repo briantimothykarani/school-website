@@ -11,6 +11,7 @@ interface Settings {
 export default function Footer() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [visible, setVisible] = useState(false);
+  const p = "var(--primary)";
 
   useEffect(() => {
     supabase
@@ -82,10 +83,21 @@ export default function Footer() {
 
   return (
     <>
-      {/* Floating back to top */}
       <button
         onClick={scrollToTop}
-        className={`fixed bottom-24 right-6 z-50 w-9 h-9 bg-[#0a1628] border border-[#c9a84c]/40 text-[#c9a84c] flex items-center justify-center hover:bg-[#c9a84c] hover:text-[#0a1628] transition-all duration-300 shadow-lg ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"}`}
+        className={`fixed bottom-24 right-6 z-50 w-9 h-9 bg-[#0a1628] flex items-center justify-center transition-all duration-300 shadow-lg ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"}`}
+        style={{
+          border: `1px solid color-mix(in srgb, var(--primary) 40%, transparent)`,
+          color: p,
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = p;
+          e.currentTarget.style.color = "#0a1628";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = "#0a1628";
+          e.currentTarget.style.color = p;
+        }}
         aria-label="Back to top"
       >
         <svg
@@ -98,17 +110,21 @@ export default function Footer() {
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={2.5}
-            d="M5 15l7-7 7 7"
+            d="M12 19V5M5 12l7-7 7 7"
           />
         </svg>
       </button>
 
       <footer className="bg-[#060e1a] text-white">
-        <div className="h-px bg-gradient-to-r from-transparent via-[#c9a84c] to-transparent" />
+        <div
+          className="h-px"
+          style={{
+            background: `linear-gradient(to right, transparent, ${p}, transparent)`,
+          }}
+        />
 
         <div className="max-w-6xl mx-auto px-6 md:px-12 py-8">
           <div className="grid md:grid-cols-3 gap-8">
-            {/* Col 1: School info + socials */}
             <div>
               <div
                 className="text-lg font-black text-white mb-0.5"
@@ -116,7 +132,10 @@ export default function Footer() {
               >
                 {settings?.school_name || "Brightside Academy"}
               </div>
-              <p className="text-[#c9a84c] text-[10px] tracking-[0.2em] uppercase mb-3">
+              <p
+                className="text-[10px] tracking-[0.2em] uppercase mb-3"
+                style={{ color: p }}
+              >
                 {settings?.motto || "Inspiring Limitless Possibilities"}
               </p>
               <div className="flex gap-2 mt-4">
@@ -127,7 +146,16 @@ export default function Footer() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={s.label}
-                    className="w-7 h-7 border border-white/15 text-white/40 flex items-center justify-center hover:border-[#c9a84c] hover:text-[#c9a84c] transition-all duration-200"
+                    className="w-7 h-7 border border-white/15 text-white/40 flex items-center justify-center transition-all duration-200"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = p;
+                      e.currentTarget.style.color = p;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor =
+                        "rgba(255,255,255,0.15)";
+                      e.currentTarget.style.color = "rgba(255,255,255,0.4)";
+                    }}
                   >
                     {s.icon}
                   </a>
@@ -135,9 +163,11 @@ export default function Footer() {
               </div>
             </div>
 
-            {/* Col 2: Quick Links */}
             <div>
-              <h4 className="text-[#c9a84c] text-[10px] font-bold tracking-[0.25em] uppercase mb-3">
+              <h4
+                className="text-[10px] font-bold tracking-[0.25em] uppercase mb-3"
+                style={{ color: p }}
+              >
                 Quick Links
               </h4>
               <ul className="flex flex-wrap gap-x-4 gap-y-1.5">
@@ -145,7 +175,11 @@ export default function Footer() {
                   <li key={id}>
                     <button
                       onClick={() => scrollTo(id)}
-                      className="text-white/50 hover:text-[#c9a84c] text-xs transition-colors capitalize"
+                      className="text-white/50 text-xs transition-colors capitalize"
+                      onMouseEnter={(e) => (e.currentTarget.style.color = p)}
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.color = "rgba(255,255,255,0.5)")
+                      }
                     >
                       {id}
                     </button>
@@ -154,16 +188,22 @@ export default function Footer() {
               </ul>
             </div>
 
-            {/* Col 3: Contact */}
             <div>
-              <h4 className="text-[#c9a84c] text-[10px] font-bold tracking-[0.25em] uppercase mb-3">
+              <h4
+                className="text-[10px] font-bold tracking-[0.25em] uppercase mb-3"
+                style={{ color: p }}
+              >
                 Get In Touch
               </h4>
               <div className="space-y-1.5">
                 {settings?.phone && (
                   <a
                     href={`tel:${settings.phone}`}
-                    className="flex items-center gap-2 text-white/50 hover:text-[#c9a84c] text-xs transition-colors"
+                    className="flex items-center gap-2 text-white/50 text-xs transition-colors"
+                    onMouseEnter={(e) => (e.currentTarget.style.color = p)}
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.color = "rgba(255,255,255,0.5)")
+                    }
                   >
                     📞 {settings.phone}
                   </a>
@@ -171,7 +211,11 @@ export default function Footer() {
                 {settings?.email && (
                   <a
                     href={`mailto:${settings.email}`}
-                    className="flex items-center gap-2 text-white/50 hover:text-[#c9a84c] text-xs transition-colors"
+                    className="flex items-center gap-2 text-white/50 text-xs transition-colors"
+                    onMouseEnter={(e) => (e.currentTarget.style.color = p)}
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.color = "rgba(255,255,255,0.5)")
+                    }
                   >
                     ✉️ {settings.email}
                   </a>
@@ -180,7 +224,6 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Bottom bar */}
           <div className="mt-6 pt-4 border-t border-white/10 grid grid-cols-3 items-center">
             <div>
               <p className="text-white/20 text-[10px] uppercase tracking-widest font-bold">
@@ -188,21 +231,30 @@ export default function Footer() {
               </p>
               <a
                 href="mailto:timothykaranibrian@gmail.com"
-                className="text-[#c9a84c]/50 hover:text-[#c9a84c] text-[10px] transition-colors"
+                className="text-[10px] transition-colors"
+                style={{
+                  color: `color-mix(in srgb, var(--primary) 50%, transparent)`,
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = p)}
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.color = `color-mix(in srgb, var(--primary) 50%, transparent)`)
+                }
               >
                 Contact Developer →
               </a>
             </div>
-
             <p className="text-white/20 text-[10px] text-center">
               © {year} {settings?.school_name || "Brightside Academy"}. All
               rights reserved.
             </p>
-
             <div className="flex justify-end">
               <button
                 onClick={scrollToTop}
-                className="text-white/20 hover:text-[#c9a84c] text-[10px] tracking-widest uppercase transition-colors flex items-center gap-1.5 group"
+                className="text-white/20 text-[10px] tracking-widest uppercase transition-colors flex items-center gap-1.5 group"
+                onMouseEnter={(e) => (e.currentTarget.style.color = p)}
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.color = "rgba(255,255,255,0.2)")
+                }
               >
                 Back to Top
                 <svg
@@ -215,7 +267,7 @@ export default function Footer() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2.5}
-                    d="M5 15l7-7 7 7"
+                    d="M12 19V5M5 12l7-7 7 7"
                   />
                 </svg>
               </button>

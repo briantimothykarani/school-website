@@ -8,6 +8,9 @@ export default function Hero({ settings, onNavClick }: any) {
     settings?.hero_bg_url ||
     "https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=1600&q=80";
 
+  // Use CSS variable for dynamic primary color
+  const primary = "var(--primary)";
+
   return (
     <section className="relative h-screen min-h-[600px] flex items-center overflow-hidden">
       {/* Background */}
@@ -20,12 +23,16 @@ export default function Hero({ settings, onNavClick }: any) {
       />
       {/* Gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-r from-[#0a1628]/90 via-[#0a1628]/60 to-transparent" />
-      {/* Gold left accent */}
-      <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-transparent via-[#c9a84c] to-transparent" />
+      {/* Dynamic color left accent */}
+      <div
+        className="absolute left-0 top-0 bottom-0 w-1"
+        style={{
+          background: `linear-gradient(to bottom, transparent, ${primary}, transparent)`,
+        }}
+      />
 
       {/* Content */}
       <div className="relative z-10 px-8 md:px-24 max-w-4xl pt-24">
-        {/* Logo */}
         {settings?.logo_url && (
           <motion.img
             src={settings.logo_url}
@@ -37,20 +44,21 @@ export default function Hero({ settings, onNavClick }: any) {
           />
         )}
 
-        {/* Motto */}
         <motion.div
           className="flex items-center gap-3 mb-5"
           initial={{ opacity: 0, x: -60 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 1.0, delay: 0.5, ease: "easeOut" }}
         >
-          <div className="h-px w-10 bg-[#c9a84c]" />
-          <span className="text-[#c9a84c] text-xs tracking-[0.3em] uppercase font-bold">
+          <div className="h-px w-10" style={{ backgroundColor: primary }} />
+          <span
+            className="text-xs tracking-[0.3em] uppercase font-bold"
+            style={{ color: primary }}
+          >
             {settings?.motto || "Inspiring Limitless Possibilities"}
           </span>
         </motion.div>
 
-        {/* School Name */}
         <motion.h1
           className="text-5xl md:text-7xl font-black text-white leading-[1.05] mb-6"
           style={{ fontFamily: "'Georgia', serif", letterSpacing: "-0.02em" }}
@@ -61,7 +69,6 @@ export default function Hero({ settings, onNavClick }: any) {
           {settings?.school_name || "Brightside Academy"}
         </motion.h1>
 
-        {/* Description */}
         <motion.p
           className="text-white/70 text-lg md:text-xl leading-relaxed mb-10 max-w-xl"
           initial={{ opacity: 0, y: 40 }}
@@ -73,31 +80,28 @@ export default function Hero({ settings, onNavClick }: any) {
             : "Nurturing global minds and inspiring the next generation of leaders, innovators, and change-makers."}
         </motion.p>
 
-        {/* Buttons */}
         <motion.div
           className="flex flex-wrap gap-4"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.0, delay: 1.8, ease: "easeOut" }}
         >
-          <motion.a
-            href="#admissions"
-            className="px-8 py-4 bg-[#c9a84c] text-[#0a1628] font-bold text-sm tracking-widest uppercase"
-            whileHover={{ scale: 1.08, backgroundColor: "#e4c06a" }}
+          <motion.button
+            onClick={() => onNavClick?.("admissions")}
+            className="px-8 py-4 font-bold text-sm tracking-widest uppercase"
+            style={{ backgroundColor: primary, color: "#0a1628" }}
+            whileHover={{ scale: 1.08, opacity: 0.9 }}
             whileTap={{ scale: 0.95 }}
             transition={{ duration: 0.3 }}
           >
             Apply Now
-          </motion.a>
+          </motion.button>
 
           <motion.button
             onClick={() => setShowPopup(true)}
-            className="px-8 py-4 border border-white/30 text-white font-semibold text-sm tracking-widest uppercase"
-            whileHover={{
-              scale: 1.08,
-              borderColor: "#c9a84c",
-              color: "#c9a84c",
-            }}
+            className="px-8 py-4 border font-semibold text-sm tracking-widest uppercase text-white"
+            style={{ borderColor: "rgba(255,255,255,0.3)" }}
+            whileHover={{ scale: 1.08, borderColor: primary, color: primary }}
             whileTap={{ scale: 0.95 }}
             transition={{ duration: 0.3 }}
           >
@@ -138,7 +142,9 @@ export default function Hero({ settings, onNavClick }: any) {
               exit={{ opacity: 0, scale: 0.7, y: "-35%" }}
               transition={{ duration: 0.5, ease: "easeOut" }}
             >
-              <div className="h-1 bg-[#c9a84c]" />
+              {/* Dynamic color top bar */}
+              <div className="h-1" style={{ backgroundColor: primary }} />
+
               <div className="p-8">
                 <button
                   onClick={() => setShowPopup(false)}
@@ -160,8 +166,14 @@ export default function Hero({ settings, onNavClick }: any) {
                 </button>
 
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="h-px w-8 bg-[#c9a84c]" />
-                  <span className="text-[#c9a84c] text-xs tracking-[0.3em] uppercase font-bold">
+                  <div
+                    className="h-px w-8"
+                    style={{ backgroundColor: primary }}
+                  />
+                  <span
+                    className="text-xs tracking-[0.3em] uppercase font-bold"
+                    style={{ color: primary }}
+                  >
                     About Us
                   </span>
                 </div>
@@ -172,7 +184,10 @@ export default function Hero({ settings, onNavClick }: any) {
                 >
                   {settings?.school_name || "Brightside Academy"}
                 </h2>
-                <p className="text-[#c9a84c] text-xs font-bold tracking-widest uppercase mb-5 italic">
+                <p
+                  className="text-xs font-bold tracking-widest uppercase mb-5 italic"
+                  style={{ color: primary }}
+                >
                   "{settings?.motto}"
                 </p>
                 <p className="text-[#0a1628]/65 leading-relaxed text-sm mb-6">
@@ -185,8 +200,9 @@ export default function Hero({ settings, onNavClick }: any) {
                     setShowPopup(false);
                     onNavClick?.("about");
                   }}
-                  className="w-full py-3 bg-[#0a1628] text-[#c9a84c] text-xs font-bold tracking-widest uppercase"
-                  whileHover={{ backgroundColor: "#c9a84c", color: "#0a1628" }}
+                  className="w-full py-3 text-xs font-bold tracking-widest uppercase"
+                  style={{ backgroundColor: "#0a1628", color: primary }}
+                  whileHover={{ backgroundColor: primary, color: "#0a1628" }}
                   transition={{ duration: 0.3 }}
                 >
                   Read Full Story →

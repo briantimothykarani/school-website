@@ -15,13 +15,14 @@ export default function Navbar({ settings, onNavClick }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
+  const primary = "var(--primary)";
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Close search dropdown when clicking outside
   useEffect(() => {
     const handler = () => setSearch("");
     window.addEventListener("click", handler);
@@ -70,7 +71,10 @@ export default function Navbar({ settings, onNavClick }: NavbarProps) {
             {settings?.logo_url ? (
               <img src={settings.logo_url} alt="Logo" className="h-10 w-auto" />
             ) : (
-              <div className="w-10 h-10 bg-[#c9a84c] flex items-center justify-center font-black text-[#0a1628] text-lg">
+              <div
+                className="w-10 h-10 flex items-center justify-center font-black text-[#0a1628] text-lg"
+                style={{ backgroundColor: primary }}
+              >
                 {settings?.school_name?.[0] || "B"}
               </div>
             )}
@@ -82,7 +86,10 @@ export default function Navbar({ settings, onNavClick }: NavbarProps) {
             >
               {settings?.school_name || "Brightside Academy"}
             </div>
-            <div className="text-[#c9a84c] text-[10px] tracking-[0.2em] uppercase">
+            <div
+              className="text-[10px] tracking-[0.2em] uppercase"
+              style={{ color: primary }}
+            >
               {settings?.motto || "Inspiring Limitless Possibilities"}
             </div>
           </Link>
@@ -94,29 +101,44 @@ export default function Navbar({ settings, onNavClick }: NavbarProps) {
             <button
               key={slug}
               onClick={() => handleNavClick(slug)}
-              className="text-white/80 hover:text-[#c9a84c] text-sm tracking-wider uppercase font-medium transition-colors duration-200 relative group"
+              className="text-white/80 text-sm tracking-wider uppercase font-medium transition-colors duration-200 relative group"
+              onMouseEnter={(e) => (e.currentTarget.style.color = primary)}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "")}
             >
               {label}
-              <span className="absolute -bottom-1 left-0 w-0 h-px bg-[#c9a84c] group-hover:w-full transition-all duration-300" />
+              <span
+                className="absolute -bottom-1 left-0 w-0 h-px group-hover:w-full transition-all duration-300"
+                style={{ backgroundColor: primary }}
+              />
             </button>
           ))}
         </div>
 
-        {/* Right Side: Search + Buttons + Hamburger */}
+        {/* Right Side */}
         <div className="flex items-center gap-4">
           {/* Search */}
           <div
             className="relative hidden md:block"
-            onClick={(e) => e.stopPropagation()} // prevent close-on-click-outside from firing here
+            onClick={(e) => e.stopPropagation()}
           >
             <input
-              className="bg-white/10 border border-white/20 text-white placeholder-white/40 rounded-full px-4 py-1.5 text-sm w-36 focus:w-52 focus:outline-none focus:border-[#c9a84c] transition-all duration-300"
+              className="bg-white/10 border border-white/20 text-white placeholder-white/40 rounded-full px-4 py-1.5 text-sm w-36 focus:w-52 focus:outline-none transition-all duration-300"
+              style={{ ["--tw-ring-color" as any]: primary }}
+              onFocus={(e) => (e.currentTarget.style.borderColor = primary)}
+              onBlur={(e) =>
+                (e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)")
+              }
               placeholder="Search..."
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
             />
             {search.length > 1 && (
-              <div className="absolute top-full mt-2 right-0 bg-[#0a1628] border border-[#c9a84c]/30 text-white p-4 rounded-lg shadow-2xl w-72 z-50">
+              <div
+                className="absolute top-full mt-2 right-0 bg-[#0a1628] text-white p-4 rounded-lg shadow-2xl w-72 z-50 border"
+                style={{
+                  borderColor: `color-mix(in srgb, var(--primary) 30%, transparent)`,
+                }}
+              >
                 {results.files.length === 0 &&
                   results.sections.length === 0 && (
                     <p className="text-white/50 text-sm">No results found.</p>
@@ -127,7 +149,11 @@ export default function Navbar({ settings, onNavClick }: NavbarProps) {
                     href={f.file_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 py-2 text-sm hover:text-[#c9a84c] transition-colors border-b border-white/10 last:border-0"
+                    className="flex items-center gap-2 py-2 text-sm transition-colors border-b border-white/10 last:border-0"
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.color = primary)
+                    }
+                    onMouseLeave={(e) => (e.currentTarget.style.color = "")}
                     onClick={() => setSearch("")}
                   >
                     📄 {f.title}
@@ -137,7 +163,11 @@ export default function Navbar({ settings, onNavClick }: NavbarProps) {
                   <button
                     key={s.id}
                     onClick={() => handleNavClick(s.slug as SectionSlug)}
-                    className="flex items-center gap-2 py-2 text-sm hover:text-[#c9a84c] w-full text-left border-b border-white/10 last:border-0"
+                    className="flex items-center gap-2 py-2 text-sm w-full text-left border-b border-white/10 last:border-0"
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.color = primary)
+                    }
+                    onMouseLeave={(e) => (e.currentTarget.style.color = "")}
                   >
                     📋 {s.title}
                   </button>
@@ -149,7 +179,10 @@ export default function Navbar({ settings, onNavClick }: NavbarProps) {
           {/* Apply Now */}
           <button
             onClick={() => handleNavClick("admissions")}
-            className="hidden md:block px-5 py-2 bg-[#c9a84c] text-[#0a1628] text-xs font-bold tracking-widest uppercase hover:bg-[#e4c06a] transition-all duration-300"
+            className="hidden md:block px-5 py-2 text-[#0a1628] text-xs font-bold tracking-widest uppercase transition-all duration-300"
+            style={{ backgroundColor: primary }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
           >
             Apply Now
           </button>
@@ -157,7 +190,15 @@ export default function Navbar({ settings, onNavClick }: NavbarProps) {
           {/* Admin Link */}
           <Link
             to="/admin"
-            className="hidden md:block px-5 py-2 border border-white/20 text-white text-xs font-bold tracking-widest uppercase hover:border-[#c9a84c] hover:text-[#c9a84c] transition-all duration-300"
+            className="hidden md:block px-5 py-2 border border-white/20 text-white text-xs font-bold tracking-widest uppercase transition-all duration-300"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = primary;
+              e.currentTarget.style.color = primary;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)";
+              e.currentTarget.style.color = "white";
+            }}
           >
             Admin
           </Link>
@@ -183,23 +224,27 @@ export default function Navbar({ settings, onNavClick }: NavbarProps) {
 
       {/* Mobile Menu */}
       <div
-        className={`md:hidden bg-[#0a1628] border-t border-[#c9a84c]/20 overflow-hidden transition-all duration-300 ${
-          menuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-        }`}
+        className={`md:hidden bg-[#0a1628] overflow-hidden transition-all duration-300 ${menuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}`}
+        style={{
+          borderTop: `1px solid color-mix(in srgb, var(--primary) 20%, transparent)`,
+        }}
       >
         <div className="px-6 py-4 space-y-1">
           {navLinks.map(({ label, slug }) => (
             <button
               key={slug}
               onClick={() => handleNavClick(slug)}
-              className="block w-full text-left text-white/80 hover:text-[#c9a84c] py-3 text-sm tracking-wider uppercase border-b border-white/10 last:border-0 transition-colors"
+              className="block w-full text-left text-white/80 py-3 text-sm tracking-wider uppercase border-b border-white/10 last:border-0 transition-colors"
+              onMouseEnter={(e) => (e.currentTarget.style.color = primary)}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "")}
             >
               {label}
             </button>
           ))}
           <button
             onClick={() => handleNavClick("admissions")}
-            className="w-full mt-3 px-5 py-2.5 bg-[#c9a84c] text-[#0a1628] text-xs font-bold tracking-widest uppercase"
+            className="w-full mt-3 px-5 py-2.5 text-[#0a1628] text-xs font-bold tracking-widest uppercase"
+            style={{ backgroundColor: primary }}
           >
             Apply Now
           </button>

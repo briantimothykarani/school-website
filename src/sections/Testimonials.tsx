@@ -17,6 +17,7 @@ export default function Testimonials() {
   const [animState, setAnimState] = useState<"idle" | "fadeOut" | "slideIn">(
     "idle",
   );
+  const p = "var(--primary)";
 
   useEffect(() => {
     supabase
@@ -56,7 +57,6 @@ export default function Testimonials() {
   if (!loading && testimonials.length === 0) return null;
 
   const t = testimonials[current];
-
   const animClass =
     animState === "fadeOut"
       ? "opacity-0 translate-x-6"
@@ -68,17 +68,19 @@ export default function Testimonials() {
     <section className="bg-[#0a1628] py-16 px-6 md:px-16 relative overflow-hidden">
       {/* Decorative quote */}
       <div
-        className="absolute top-4 right-10 text-[#c9a84c]/10 text-[160px] font-black leading-none select-none pointer-events-none"
-        style={{ fontFamily: "'Georgia', serif" }}
+        className="absolute top-4 right-10 text-[160px] font-black leading-none select-none pointer-events-none opacity-10"
+        style={{ fontFamily: "'Georgia', serif", color: p }}
       >
         "
       </div>
 
       <div className="max-w-xl mx-auto relative z-10">
-        {/* Label */}
         <div className="flex items-center gap-3 mb-3">
-          <div className="h-px w-8 bg-[#c9a84c]" />
-          <span className="text-[#c9a84c] text-xs tracking-[0.3em] uppercase font-bold">
+          <div className="h-px w-8" style={{ backgroundColor: p }} />
+          <span
+            className="text-xs tracking-[0.3em] uppercase font-bold"
+            style={{ color: p }}
+          >
             Testimonials
           </span>
         </div>
@@ -87,10 +89,9 @@ export default function Testimonials() {
           className="text-3xl font-black text-white mb-8"
           style={{ fontFamily: "'Georgia', serif" }}
         >
-          What Our <span className="text-[#c9a84c]">Community</span> Says
+          What Our <span style={{ color: p }}>Community</span> Says
         </h2>
 
-        {/* Loading skeleton */}
         {loading && (
           <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4 animate-pulse">
             <div className="flex gap-1 justify-center">
@@ -113,38 +114,46 @@ export default function Testimonials() {
           </div>
         )}
 
-        {/* Single testimonial */}
         {!loading && t && (
           <div
-            className={`bg-white/5 border border-white/10 hover:border-[#c9a84c]/40 rounded-2xl p-6 transition-all duration-500 ease-in-out text-center ${animClass}`}
+            className={`bg-white/5 border border-white/10 rounded-2xl p-6 transition-all duration-500 ease-in-out text-center ${animClass}`}
+            style={{ ["--hover-border" as any]: p }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.borderColor = `color-mix(in srgb, var(--primary) 40%, transparent)`)
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)")
+            }
           >
-            {/* Stars */}
             <div className="flex gap-1 mb-4 justify-center">
               {[...Array(5)].map((_, j) => (
                 <span
                   key={j}
-                  className={`text-sm ${j < t.rating ? "text-[#c9a84c]" : "text-white/20"}`}
+                  className="text-sm"
+                  style={{ color: j < t.rating ? p : "rgba(255,255,255,0.2)" }}
                 >
                   ★
                 </span>
               ))}
             </div>
-
-            {/* Message */}
             <p className="text-white/75 text-sm leading-relaxed mb-5 italic">
               "{t.message}"
             </p>
-
-            {/* Author */}
             <div className="flex items-center gap-3 justify-center">
               {t.avatar_url ? (
                 <img
                   src={t.avatar_url}
                   alt={t.name}
-                  className="w-9 h-9 rounded-full object-cover border border-[#c9a84c]/30"
+                  className="w-9 h-9 rounded-full object-cover"
+                  style={{
+                    border: `1px solid color-mix(in srgb, var(--primary) 30%, transparent)`,
+                  }}
                 />
               ) : (
-                <div className="w-9 h-9 rounded-full bg-[#c9a84c] flex items-center justify-center font-black text-[#0a1628] text-sm shrink-0">
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center font-black text-[#0a1628] text-sm shrink-0"
+                  style={{ backgroundColor: p }}
+                >
                   {t.name[0]}
                 </div>
               )}
@@ -158,18 +167,32 @@ export default function Testimonials() {
           </div>
         )}
 
-        {/* Dot indicators */}
         {!loading && testimonials.length > 1 && (
           <div className="flex justify-center gap-2 mt-5">
             {testimonials.map((_, i) => (
               <button
                 key={i}
                 onClick={() => goTo(i)}
-                className={`transition-all duration-300 rounded-full ${
+                className="transition-all duration-300 rounded-full"
+                style={
                   i === current
-                    ? "w-6 h-2 bg-[#c9a84c]"
-                    : "w-2 h-2 bg-white/20 hover:bg-white/40"
-                }`}
+                    ? { width: "24px", height: "8px", backgroundColor: p }
+                    : {
+                        width: "8px",
+                        height: "8px",
+                        backgroundColor: "rgba(255,255,255,0.2)",
+                      }
+                }
+                onMouseEnter={(e) => {
+                  if (i !== current)
+                    e.currentTarget.style.backgroundColor =
+                      "rgba(255,255,255,0.4)";
+                }}
+                onMouseLeave={(e) => {
+                  if (i !== current)
+                    e.currentTarget.style.backgroundColor =
+                      "rgba(255,255,255,0.2)";
+                }}
               />
             ))}
           </div>

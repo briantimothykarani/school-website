@@ -17,6 +17,7 @@ export default function Contact() {
     "idle",
   );
   const [errorMsg, setErrorMsg] = useState("");
+  const p = "var(--primary)";
 
   useEffect(() => {
     supabase
@@ -34,7 +35,6 @@ export default function Contact() {
     if (!form.name || !form.email || !form.message || !settings?.email) return;
     setStatus("sending");
     setErrorMsg("");
-
     try {
       await emailjs.send(
         import.meta.env.VITE_EMAILJS_SERVICE_ID,
@@ -48,7 +48,6 @@ export default function Contact() {
         },
         import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
       );
-
       setStatus("sent");
       setForm({ name: "", email: "", message: "" });
     } catch (err: any) {
@@ -65,9 +64,13 @@ export default function Contact() {
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-10">
+      {/* Header */}
       <div className="flex items-center gap-3 mb-8">
-        <div className="h-px w-10 bg-[#c9a84c]" />
-        <span className="text-[#c9a84c] text-xs tracking-[0.3em] uppercase font-bold">
+        <div className="h-px w-10" style={{ backgroundColor: p }} />
+        <span
+          className="text-xs tracking-[0.3em] uppercase font-bold"
+          style={{ color: p }}
+        >
           Get In Touch
         </span>
       </div>
@@ -88,16 +91,24 @@ export default function Contact() {
           </p>
 
           <div className="space-y-4 pt-2">
+            {/* Phone */}
             <a
               href={`tel:${settings.phone}`}
-              className="flex items-center gap-4 p-4 border border-[#0a1628]/10 hover:border-[#c9a84c]/50 hover:bg-[#f8f5ef] transition-all group"
+              className="flex items-center gap-4 p-4 border border-[#0a1628]/10 hover:bg-[#f8f5ef] transition-all group"
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.borderColor = `color-mix(in srgb, var(--primary) 50%, transparent)`)
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.borderColor = "rgba(10,22,40,0.1)")
+              }
             >
-              <div className="w-10 h-10 bg-[#0a1628] group-hover:bg-[#c9a84c] flex items-center justify-center transition-colors shrink-0">
+              <div className="w-10 h-10 bg-[#0a1628] flex items-center justify-center transition-colors shrink-0 group-hover:opacity-80">
                 <svg
-                  className="w-4 h-4 text-[#c9a84c] group-hover:text-[#0a1628] transition-colors"
+                  className="w-4 h-4 transition-colors"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
+                  style={{ color: p }}
                 >
                   <path
                     strokeLinecap="round"
@@ -111,22 +122,36 @@ export default function Contact() {
                 <p className="text-[#0a1628]/40 text-[10px] uppercase tracking-widest font-bold mb-0.5">
                   Phone
                 </p>
-                <p className="text-[#0a1628] font-semibold text-sm group-hover:text-[#c9a84c] transition-colors">
+                <p
+                  className="text-[#0a1628] font-semibold text-sm transition-colors"
+                  onMouseEnter={(e) => (e.currentTarget.style.color = p)}
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.color = "#0a1628")
+                  }
+                >
                   {settings.phone}
                 </p>
               </div>
             </a>
 
+            {/* Email */}
             <a
               href={`mailto:${settings.email}`}
-              className="flex items-center gap-4 p-4 border border-[#0a1628]/10 hover:border-[#c9a84c]/50 hover:bg-[#f8f5ef] transition-all group"
+              className="flex items-center gap-4 p-4 border border-[#0a1628]/10 hover:bg-[#f8f5ef] transition-all group"
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.borderColor = `color-mix(in srgb, var(--primary) 50%, transparent)`)
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.borderColor = "rgba(10,22,40,0.1)")
+              }
             >
-              <div className="w-10 h-10 bg-[#0a1628] group-hover:bg-[#c9a84c] flex items-center justify-center transition-colors shrink-0">
+              <div className="w-10 h-10 bg-[#0a1628] flex items-center justify-center transition-colors shrink-0 group-hover:opacity-80">
                 <svg
-                  className="w-4 h-4 text-[#c9a84c] group-hover:text-[#0a1628] transition-colors"
+                  className="w-4 h-4 transition-colors"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
+                  style={{ color: p }}
                 >
                   <path
                     strokeLinecap="round"
@@ -140,7 +165,13 @@ export default function Contact() {
                 <p className="text-[#0a1628]/40 text-[10px] uppercase tracking-widest font-bold mb-0.5">
                   Email
                 </p>
-                <p className="text-[#0a1628] font-semibold text-sm group-hover:text-[#c9a84c] transition-colors">
+                <p
+                  className="text-[#0a1628] font-semibold text-sm transition-colors"
+                  onMouseEnter={(e) => (e.currentTarget.style.color = p)}
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.color = "#0a1628")
+                  }
+                >
                   {settings.email}
                 </p>
               </div>
@@ -192,7 +223,15 @@ export default function Contact() {
               </p>
               <button
                 onClick={() => setStatus("idle")}
-                className="px-6 py-2 border border-[#0a1628]/20 text-[#0a1628] text-xs font-bold uppercase tracking-widest hover:border-[#c9a84c] hover:text-[#c9a84c] transition-all"
+                className="px-6 py-2 border border-[#0a1628]/20 text-[#0a1628] text-xs font-bold uppercase tracking-widest transition-all"
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = p;
+                  e.currentTarget.style.color = p;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "rgba(10,22,40,0.2)";
+                  e.currentTarget.style.color = "#0a1628";
+                }}
               >
                 Send Another
               </button>
@@ -211,30 +250,39 @@ export default function Contact() {
                 </div>
               )}
 
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-[#0a1628]/50 mb-2">
-                  Your Name
-                </label>
-                <input
-                  className="w-full border border-[#0a1628]/20 p-3 focus:outline-none focus:border-[#c9a84c] transition-colors text-[#0a1628] bg-white text-sm"
-                  placeholder="e.g. John Kamau"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-[#0a1628]/50 mb-2">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  className="w-full border border-[#0a1628]/20 p-3 focus:outline-none focus:border-[#c9a84c] transition-colors text-[#0a1628] bg-white text-sm"
-                  placeholder="e.g. john@example.com"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                />
-              </div>
+              {[
+                {
+                  label: "Your Name",
+                  key: "name",
+                  type: "text",
+                  placeholder: "e.g. John Kamau",
+                },
+                {
+                  label: "Email Address",
+                  key: "email",
+                  type: "email",
+                  placeholder: "e.g. john@example.com",
+                },
+              ].map(({ label, key, type, placeholder }) => (
+                <div key={key}>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#0a1628]/50 mb-2">
+                    {label}
+                  </label>
+                  <input
+                    type={type}
+                    className="w-full border border-[#0a1628]/20 p-3 focus:outline-none transition-colors text-[#0a1628] bg-white text-sm"
+                    placeholder={placeholder}
+                    value={form[key as keyof typeof form]}
+                    onChange={(e) =>
+                      setForm({ ...form, [key]: e.target.value })
+                    }
+                    onFocus={(e) => (e.currentTarget.style.borderColor = p)}
+                    onBlur={(e) =>
+                      (e.currentTarget.style.borderColor = "rgba(10,22,40,0.2)")
+                    }
+                  />
+                </div>
+              ))}
 
               <div>
                 <label className="block text-[10px] font-bold uppercase tracking-widest text-[#0a1628]/50 mb-2">
@@ -242,11 +290,15 @@ export default function Contact() {
                 </label>
                 <textarea
                   rows={5}
-                  className="w-full border border-[#0a1628]/20 p-3 focus:outline-none focus:border-[#c9a84c] transition-colors text-[#0a1628] bg-white text-sm resize-none"
+                  className="w-full border border-[#0a1628]/20 p-3 focus:outline-none transition-colors text-[#0a1628] bg-white text-sm resize-none"
                   placeholder="How can we help you?"
                   value={form.message}
                   onChange={(e) =>
                     setForm({ ...form, message: e.target.value })
+                  }
+                  onFocus={(e) => (e.currentTarget.style.borderColor = p)}
+                  onBlur={(e) =>
+                    (e.currentTarget.style.borderColor = "rgba(10,22,40,0.2)")
                   }
                 />
               </div>
@@ -259,11 +311,25 @@ export default function Contact() {
                   !form.email ||
                   !form.message
                 }
-                className="w-full px-6 py-3 bg-[#0a1628] text-[#c9a84c] text-xs font-bold tracking-widest uppercase hover:bg-[#c9a84c] hover:text-[#0a1628] transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full px-6 py-3 bg-[#0a1628] text-xs font-bold tracking-widest uppercase transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                style={{ color: p }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = p;
+                  e.currentTarget.style.color = "#0a1628";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "#0a1628";
+                  e.currentTarget.style.color = p;
+                }}
               >
                 {status === "sending" ? (
                   <>
-                    <div className="w-3.5 h-3.5 border-2 border-[#c9a84c] border-t-transparent rounded-full animate-spin" />
+                    <div
+                      className="w-3.5 h-3.5 border-2 border-t-transparent rounded-full animate-spin"
+                      style={{
+                        borderColor: `${p} transparent transparent transparent`,
+                      }}
+                    />
                     Sending...
                   </>
                 ) : (

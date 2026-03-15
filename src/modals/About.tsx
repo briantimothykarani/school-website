@@ -14,6 +14,7 @@ interface Settings {
 export default function About() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [loading, setLoading] = useState(true);
+  const p = "var(--primary)";
 
   useEffect(() => {
     supabase
@@ -34,16 +35,17 @@ export default function About() {
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-10">
-      {/* Header */}
       <div className="flex items-center gap-3 mb-10">
-        <div className="h-px w-10 bg-[#c9a84c]" />
-        <span className="text-[#c9a84c] text-xs tracking-[0.3em] uppercase font-bold">
+        <div className="h-px w-10" style={{ backgroundColor: p }} />
+        <span
+          className="text-xs tracking-[0.3em] uppercase font-bold"
+          style={{ color: p }}
+        >
           Our Story
         </span>
       </div>
 
       <div className="grid md:grid-cols-2 gap-12 items-start">
-        {/* Left: Text */}
         <div>
           <h1
             className="text-4xl font-black text-[#0a1628] mb-3 leading-tight"
@@ -51,10 +53,12 @@ export default function About() {
           >
             {settings.school_name}
           </h1>
-          <p className="text-[#c9a84c] text-sm font-bold tracking-widest uppercase mb-8 italic">
+          <p
+            className="text-sm font-bold tracking-widest uppercase mb-8 italic"
+            style={{ color: p }}
+          >
             "{settings.motto}"
           </p>
-
           {settings.about && (
             <div className="space-y-4">
               {settings.about
@@ -70,41 +74,47 @@ export default function About() {
                 ))}
             </div>
           )}
-
-          {/* Contact Info */}
           <div className="mt-10 pt-8 border-t border-[#0a1628]/10 space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-[#0a1628] flex items-center justify-center shrink-0">
-                <span className="text-[#c9a84c] text-xs">📞</span>
+            {[
+              {
+                href: `tel:${settings.phone}`,
+                icon: "📞",
+                text: settings.phone,
+              },
+              {
+                href: `mailto:${settings.email}`,
+                icon: "✉️",
+                text: settings.email,
+              },
+            ].map(({ href, icon, text }) => (
+              <div key={href} className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-[#0a1628] flex items-center justify-center shrink-0">
+                  <span className="text-xs" style={{ color: p }}>
+                    {icon}
+                  </span>
+                </div>
+                <a
+                  href={href}
+                  className="text-[#0a1628] font-semibold text-sm transition-colors"
+                  onMouseEnter={(e) => (e.currentTarget.style.color = p)}
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.color = "#0a1628")
+                  }
+                >
+                  {text}
+                </a>
               </div>
-              <a
-                href={`tel:${settings.phone}`}
-                className="text-[#0a1628] font-semibold text-sm hover:text-[#c9a84c] transition-colors"
-              >
-                {settings.phone}
-              </a>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-[#0a1628] flex items-center justify-center shrink-0">
-                <span className="text-[#c9a84c] text-xs">✉️</span>
-              </div>
-              <a
-                href={`mailto:${settings.email}`}
-                className="text-[#0a1628] font-semibold text-sm hover:text-[#c9a84c] transition-colors"
-              >
-                {settings.email}
-              </a>
-            </div>
+            ))}
           </div>
         </div>
 
-        {/* Right: Image + Map */}
         <div className="space-y-4">
           {settings.about_image_url && (
             <img
               src={settings.about_image_url}
               alt={settings.school_name}
-              className="w-full aspect-[4/3] object-cover border-b-4 border-[#c9a84c]"
+              className="w-full aspect-[4/3] object-cover"
+              style={{ borderBottom: `4px solid ${p}` }}
             />
           )}
           {settings.map_url && (
@@ -136,7 +146,6 @@ function ModalSkeleton() {
           <div className="h-4 w-1/2 bg-[#0a1628]/10" />
           <div className="h-4 w-full bg-[#0a1628]/10" />
           <div className="h-4 w-5/6 bg-[#0a1628]/10" />
-          <div className="h-4 w-4/5 bg-[#0a1628]/10" />
         </div>
         <div className="aspect-[4/3] bg-[#0a1628]/10" />
       </div>
