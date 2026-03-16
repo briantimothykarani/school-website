@@ -88,7 +88,7 @@ export default function Hero({ settings, onNavClick }: any) {
         >
           <motion.button
             onClick={() => onNavClick?.("admissions")}
-            className="px-8 py-4 font-bold text-sm tracking-widest uppercase"
+            className="px-8 py-4 font-bold text-sm cursor-pointer tracking-widest uppercase"
             style={{ backgroundColor: primary, color: "#0a1628" }}
             whileHover={{ scale: 1.08, opacity: 0.9 }}
             whileTap={{ scale: 0.95 }}

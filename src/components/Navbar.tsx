@@ -101,7 +101,7 @@ export default function Navbar({ settings, onNavClick }: NavbarProps) {
             <button
               key={slug}
               onClick={() => handleNavClick(slug)}
-              className="text-white/80 text-sm tracking-wider uppercase font-medium transition-colors duration-200 relative group"
+              className="text-white/80 text-sm tracking-wider uppercase cursor-pointer font-medium transition-colors duration-200 relative group"
               onMouseEnter={(e) => (e.currentTarget.style.color = primary)}
               onMouseLeave={(e) => (e.currentTarget.style.color = "")}
             >
@@ -179,7 +179,7 @@ export default function Navbar({ settings, onNavClick }: NavbarProps) {
           {/* Apply Now */}
           <button
             onClick={() => handleNavClick("admissions")}
-            className="hidden md:block px-5 py-2 text-[#0a1628] text-xs font-bold tracking-widest uppercase transition-all duration-300"
+            className="hidden md:block px-5 py-2 text-[#0a1628] text-xs font-bold cursor-pointer tracking-widest uppercase transition-all duration-300"
             style={{ backgroundColor: primary }}
             onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
             onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
@@ -190,7 +190,7 @@ export default function Navbar({ settings, onNavClick }: NavbarProps) {
           {/* Admin Link */}
           <Link
             to="/admin"
-            className="hidden md:block px-5 py-2 border border-white/20 text-white text-xs font-bold tracking-widest uppercase transition-all duration-300"
+            className="hidden md:block px-5 py-2 border cursor-pointer border-white/20 text-white text-xs font-bold tracking-widest uppercase transition-all duration-300"
             onMouseEnter={(e) => {
               e.currentTarget.style.borderColor = primary;
               e.currentTarget.style.color = primary;

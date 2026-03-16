@@ -109,9 +109,7 @@ export default function Home() {
       <div className="h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-[#c9a84c] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-[#0a1628]/50 text-sm tracking-widest uppercase">
-            Loading portal...
-          </p>
+          <p className="text-[#0a1628]/50 text-sm tracking-widest uppercase"></p>
         </div>
       </div>
     );

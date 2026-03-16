@@ -62,14 +62,14 @@ export default function Login() {
           {/* Google Sign In */}
           <button
             onClick={signInWithGoogle}
-            className="w-full flex items-center justify-center gap-3 border-2 border-[#0a1628]/10 hover:border-[#c9a84c] px-6 py-4 transition-all duration-300 group"
+            className="w-full flex  items-center justify-center gap-3 border-2 border-[#0a1628]/10 hover:border-[#c9a84c] px-6 py-4 transition-all duration-300 group"
           >
             <img
               src="https://www.svgrepo.com/show/475656/google-color.svg"
               className="w-5 h-5"
               alt="Google"
             />
-            <span className="text-[#0a1628] font-bold text-sm tracking-wider uppercase group-hover:text-[#c9a84c] transition-colors">
+            <span className="text-[#0a1628] font-bold cursor-pointer text-sm tracking-wider uppercase group-hover:text-[#c9a84c] transition-colors">
               Sign in with Google
             </span>
           </button>
