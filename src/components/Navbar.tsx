@@ -2,7 +2,12 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { Link } from "react-router-dom";
 
-type SectionSlug = "about" | "admissions" | "events" | "downloads" | "contact";
+type SectionSlug =
+  | "about us"
+  | "admissions"
+  | "events"
+  | "downloads & fees structure"
+  | "contact us";
 
 interface NavbarProps {
   settings: any;
